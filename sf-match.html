@@ -237,6 +237,10 @@
     // Adresse interne qui reçoit les annonces (à activer une fois sur formsubmit.co)
     var SFMATCH_EMAIL = 'etude@arnaud-enr.com';
 
+    // Base partagée + notifications automatiques (Supabase). Laisser vide = démo locale.
+    // Remplir url + anonKey pour activer la base partagée entre tous les utilisateurs.
+    var SFMATCH_SUPABASE = { url: '', anonKey: '' };
+
     var LS_LISTINGS = 'sfmatch_listings';
     var LS_SEARCHES = 'sfmatch_searches';
 
@@ -309,6 +313,20 @@
       } catch (e) {}
     }
 
+    // Base partagée Supabase (activée uniquement si les clés sont renseignées)
+    var _sb = null;
+    function getSB() {
+      if (_sb) return Promise.resolve(_sb);
+      return import('https://esm.sh/@supabase/supabase-js@2').then(function (m) {
+        _sb = m.createClient(SFMATCH_SUPABASE.url, SFMATCH_SUPABASE.anonKey);
+        return _sb;
+      });
+    }
+    function pushToDB(table, record) {
+      if (!SFMATCH_SUPABASE.url || !SFMATCH_SUPABASE.anonKey) return;
+      getSB().then(function (c) { return c.from(table).insert([record]); }).catch(function () {});
+    }
+
     // Dépôt vendeur
     var formSell = document.getElementById('formSell');
     if (formSell) formSell.addEventListener('submit', function (e) {
@@ -327,6 +345,7 @@
 
       car.correspondances = total ? exact.concat(similar).map(function (s) { return s.nom + ' (' + (s.ville || '—') + ')'; }).join(' · ') : 'aucune recherche active pour l’instant';
       sendEmail('SF Match — Vente ' + car.marque + ' ' + car.modele + ' — ' + total + ' acheteur(s) à mettre en relation', car);
+      pushToDB('listings', car);
 
       var box = document.getElementById('matchSell');
       document.getElementById('matchSellCount').textContent = total > 0 ? (total + (total > 1 ? ' acheteurs' : ' acheteur') + ' en attente de ce véhicule') : 'Annonce enregistrée';
@@ -361,6 +380,7 @@
 
       srch.correspondances = total ? exact.concat(similar).map(function (c) { return c.marque + ' ' + c.modele + (c.annee ? ' (' + c.annee + ')' : ''); }).join(' · ') : 'aucun véhicule correspondant pour l’instant';
       sendEmail('SF Match — Recherche ' + srch.marque + ' ' + srch.modele + ' — ' + total + ' véhicule(s) correspondant(s)', srch);
+      pushToDB('searches', srch);
 
       var box = document.getElementById('matchBuy');
       document.getElementById('matchBuyCount').textContent = total > 0 ? (total + (total > 1 ? ' véhicules disponibles' : ' véhicule disponible') + ' pour vous') : 'Alerte créée';

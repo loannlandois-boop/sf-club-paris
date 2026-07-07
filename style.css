@@ -1725,3 +1725,40 @@ body::after {
   .hero h1 { font-size: 2.05rem; }
   h1 { font-size: 1.9rem; }
 }
+
+/* ============================================================
+   OUTIL SF MATCH — mise en relation acheteurs / vendeurs
+   ============================================================ */
+.tool-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 32px; flex-wrap: wrap; }
+.tool-tab {
+  background: transparent; border: 1px solid var(--border); color: var(--text-muted);
+  padding: .9em 1.9em; letter-spacing: .12em; text-transform: uppercase;
+  font-size: .72rem; font-weight: 600; transition: all .3s var(--ease);
+}
+.tool-tab:hover { border-color: var(--gold); color: var(--text); }
+.tool-tab.is-active { background: var(--gold); border-color: var(--gold); color: #0A0A0A; }
+.tool-panel { display: none; }
+.tool-panel.is-active { display: block; }
+
+.upload {
+  border: 1px dashed var(--border); padding: 22px; text-align: center;
+  cursor: pointer; transition: border-color .3s var(--ease); border-radius: 0;
+}
+.upload:hover { border-color: var(--gold); }
+.upload input[type="file"] { display: none; }
+.upload__hint { color: var(--text-muted); font-size: .85rem; }
+.upload__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px; margin-top: 14px; }
+.upload__grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border: 1px solid var(--border); }
+
+.match { margin-top: 1.6rem; border: 1px solid var(--gold); background: rgba(255,255,255,.04); padding: 1.3em 1.5em; display: none; }
+.match.is-visible { display: block; animation: page-in .5s var(--ease) both; }
+.match__count { font-family: var(--serif); font-weight: 800; font-size: 1.7rem; color: #fff; line-height: 1.1; }
+.match__list { margin: .9rem 0 0; padding: 0; list-style: none; font-size: .9rem; color: var(--text-muted); }
+.match__list li { padding: .5rem 0; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 12px; }
+.match__list li b { color: var(--text); font-weight: 600; }
+
+.tool-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--border); }
+.tool-how__step { padding: 34px 28px; border-right: 1px solid var(--border); }
+.tool-how__step:last-child { border-right: 0; }
+.tool-how__n { font-family: var(--serif); font-weight: 900; font-size: 2.4rem; color: var(--gold); line-height: 1; margin-bottom: .8rem; }
+@media (max-width: 768px) { .tool-how { grid-template-columns: 1fr; } .tool-how__step { border-right: 0; border-bottom: 1px solid var(--border); } .tool-how__step:last-child { border-bottom: 0; } }

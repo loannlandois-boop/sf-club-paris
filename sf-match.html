@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SF Match — Mise en relation acheteurs &amp; vendeurs | SF CLUB PARIS</title>
+  <meta name="description" content="SF Match : déposez votre véhicule à vendre, notre IA le met instantanément en relation avec les acheteurs du club qui recherchent ce modèle ou un modèle similaire.">
+  <meta property="og:title" content="SF Match — Mise en relation acheteurs & vendeurs">
+  <meta property="og:description" content="L'outil qui connecte vendeurs et acheteurs par correspondance intelligente.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Préloader -->
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav>
+        <ul class="nav__menu">
+          <li><a href="location.html">Location</a></li>
+          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="financement.html">Financement</a></li>
+          <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav__actions"><a href="location.html" class="btn btn--solid nav__cta">Réserver</a><a href="club.html" class="btn btn--solid nav__cta nav__cta--club">Club</a></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== HERO ===== -->
+    <section class="hero hero--compact">
+      <div class="container hero__inner">
+        <span class="eyebrow reveal">SF Match · Intelligence de mise en relation</span>
+        <h1 class="reveal" data-delay="1">Le bon acheteur, au bon moment</h1>
+        <p class="hero__sub reveal" data-delay="2">Déposez votre véhicule : notre moteur le confronte instantanément aux recherches des acheteurs du Club et déclenche la mise en relation avec ceux qui attendent ce modèle — ou un modèle similaire.</p>
+      </div>
+    </section>
+    <hr class="gold-line">
+
+    <!-- ===== COMMENT ÇA MARCHE ===== -->
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <span class="eyebrow">Le principe</span>
+          <h2>Comment ça marche</h2>
+        </div>
+        <div class="tool-how reveal">
+          <div class="tool-how__step">
+            <div class="tool-how__n">01</div>
+            <h3>Vous déposez</h3>
+            <p class="muted">Marque, modèle, puissance, couleur, finition, photos… en 2 minutes.</p>
+          </div>
+          <div class="tool-how__step">
+            <div class="tool-how__n">02</div>
+            <h3>L'IA analyse</h3>
+            <p class="muted">Le moteur compare votre véhicule à toutes les recherches actives et calcule les correspondances (exactes &amp; similaires).</p>
+          </div>
+          <div class="tool-how__step">
+            <div class="tool-how__n">03</div>
+            <h3>Mise en relation</h3>
+            <p class="muted">L'annonce arrive chez SF Club et est poussée aux acheteurs concernés. Vous êtes mis en relation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== OUTIL ===== -->
+    <section class="section" id="outil" style="padding-top:0">
+      <div class="container" style="max-width:820px">
+
+        <div class="tool-tabs">
+          <button class="tool-tab is-active" data-panel="sell">Je vends un véhicule</button>
+          <button class="tool-tab" data-panel="buy">Je recherche un véhicule</button>
+        </div>
+
+        <!-- PANNEAU VENDEUR -->
+        <div class="tool-panel is-active" id="panel-sell">
+          <form class="form-card" id="formSell">
+            <div class="form-grid">
+              <div class="field"><label for="s-marque">Marque</label><input type="text" id="s-marque" placeholder="Ferrari, Porsche…" required></div>
+              <div class="field"><label for="s-modele">Modèle</label><input type="text" id="s-modele" placeholder="296 GTB, 911 Turbo S…" required></div>
+              <div class="field"><label for="s-annee">Année</label><input type="number" id="s-annee" min="1950" max="2026" placeholder="2023"></div>
+              <div class="field"><label for="s-ch">Puissance (ch)</label><input type="number" id="s-ch" placeholder="620"></div>
+              <div class="field"><label for="s-couleur">Couleur</label><input type="text" id="s-couleur" placeholder="Rosso Corsa, Noir…"></div>
+              <div class="field"><label for="s-finition">Finition</label><input type="text" id="s-finition" placeholder="Assetto Fiorano, Pack Sport…"></div>
+              <div class="field"><label for="s-km">Kilométrage</label><input type="text" id="s-km" placeholder="12 000 km"></div>
+              <div class="field"><label for="s-prix">Prix souhaité (optionnel)</label><input type="text" id="s-prix" placeholder="Confidentiel"></div>
+            </div>
+            <div class="field" style="margin-top:20px"><label for="s-desc">Description</label><textarea id="s-desc" placeholder="Historique, options, entretien…"></textarea></div>
+
+            <div class="field" style="margin-top:20px">
+              <label>Photos du véhicule</label>
+              <label class="upload" for="s-photos">
+                <span class="upload__hint">Cliquez pour ajouter des photos (extérieur, intérieur, moteur…)</span>
+                <input type="file" id="s-photos" accept="image/*" multiple>
+                <div class="upload__grid" id="s-preview"></div>
+              </label>
+            </div>
+
+            <div class="form-grid" style="margin-top:20px">
+              <div class="field"><label for="s-nom">Votre nom</label><input type="text" id="s-nom" required></div>
+              <div class="field"><label for="s-contact">Email ou téléphone</label><input type="text" id="s-contact" required></div>
+            </div>
+
+            <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Publier &amp; trouver un acheteur</button>
+
+            <div class="match" id="matchSell">
+              <div class="match__count" id="matchSellCount"></div>
+              <p class="muted" style="margin:.4rem 0 0;font-size:.9rem" id="matchSellText"></p>
+              <ul class="match__list" id="matchSellList"></ul>
+              <p class="muted" style="margin:1rem 0 0;font-size:.8rem">Votre annonce a été transmise à SF Club et poussée aux acheteurs correspondants. Un conseiller organise la mise en relation.</p>
+            </div>
+          </form>
+        </div>
+
+        <!-- PANNEAU ACHETEUR -->
+        <div class="tool-panel" id="panel-buy">
+          <form class="form-card" id="formBuy">
+            <div class="form-grid">
+              <div class="field"><label for="b-marque">Marque recherchée</label><input type="text" id="b-marque" placeholder="Ferrari, Range Rover…" required></div>
+              <div class="field"><label for="b-modele">Modèle (ou laissez vide)</label><input type="text" id="b-modele" placeholder="296, 911, Urus…"></div>
+              <div class="field"><label for="b-budget">Budget max</label><input type="text" id="b-budget" placeholder="Ex. 250 000 €"></div>
+              <div class="field"><label for="b-annee">Année minimum</label><input type="number" id="b-annee" min="1950" max="2026" placeholder="2021"></div>
+            </div>
+            <div class="field" style="margin-top:20px">
+              <label class="checkbox"><input type="checkbox" id="b-similaire" checked><span>M'alerter aussi pour les modèles <b>similaires</b> (même marque / même segment)</span></label>
+            </div>
+            <div class="field" style="margin-top:20px"><label for="b-desc">Critères / précisions</label><textarea id="b-desc" placeholder="Couleur, finition, kilométrage, options recherchées…"></textarea></div>
+            <div class="form-grid" style="margin-top:20px">
+              <div class="field"><label for="b-nom">Votre nom</label><input type="text" id="b-nom" required></div>
+              <div class="field"><label for="b-contact">Email ou téléphone</label><input type="text" id="b-contact" required></div>
+            </div>
+
+            <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Créer mon alerte intelligente</button>
+
+            <div class="match" id="matchBuy">
+              <div class="match__count" id="matchBuyCount"></div>
+              <p class="muted" style="margin:.4rem 0 0;font-size:.9rem" id="matchBuyText"></p>
+              <ul class="match__list" id="matchBuyList"></ul>
+              <p class="muted" style="margin:1rem 0 0;font-size:.8rem">Votre alerte est active. Dès qu'un véhicule correspondant est déposé, vous êtes notifié et mis en relation par SF Club.</p>
+            </div>
+          </form>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== POURQUOI ===== -->
+    <section class="section cta-band">
+      <div class="container center" style="max-width:760px">
+        <hr class="gold-line--short">
+        <h2 class="reveal">Une vente confidentielle, un acheteur qualifié</h2>
+        <p class="muted reveal" data-delay="1">Pas d'annonce publique, pas de curieux : uniquement des acheteurs du Club réellement en recherche. La mise en relation est orchestrée par un conseiller SF Club.</p>
+        <div class="btn-row reveal" data-delay="2" style="justify-content:center">
+          <a href="#outil" class="btn btn--solid btn--lg">Déposer mon véhicule</a>
+          <a href="achat-revente.html" class="btn btn--lg">Retour à Achat &amp; Revente</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+          <p>Club automobile privé. L'héritage en mouvement — Paris · Côte d'Azur · Monaco.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Le Club</h4>
+          <ul>
+            <li><a href="location.html">Location</a></li>
+            <li><a href="evenements.html">Événements</a></li>
+            <li><a href="financement.html">Financement</a></li>
+            <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Espace</h4>
+          <ul>
+            <li><a href="luxe.html">La Collection</a></li>
+            <li><a href="sf-match.html">SF Match</a></li>
+            <li><a href="club.html">Le Club</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Destinations</h4>
+          <ul>
+            <li><a href="luxe.html">Paris</a></li>
+            <li><a href="luxe.html">Côte d'Azur</a></li>
+            <li><a href="luxe.html">Monaco</a></li>
+            <li><a href="luxe.html">Courchevel</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="tel:0493080280">04 93 08 02 80</a></li>
+            <li><a href="mailto:contact@sfclubparis.com">contact@sfclubparis.com</a></li>
+            <li><a href="contact.html">Nos adresses</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+        <div class="footer__legal">
+          <a href="#">Mentions légales</a>
+          <a href="#">RGPD</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+  /* ===== SF MATCH — moteur de mise en relation ===== */
+  (function () {
+    // Adresse interne qui reçoit les annonces (à activer une fois sur formsubmit.co)
+    var SFMATCH_EMAIL = 'contact@sfclubparis.com';
+
+    var LS_LISTINGS = 'sfmatch_listings';
+    var LS_SEARCHES = 'sfmatch_searches';
+
+    function load(k, seed) {
+      try { var v = JSON.parse(localStorage.getItem(k)); if (Array.isArray(v)) return v; } catch (e) {}
+      try { localStorage.setItem(k, JSON.stringify(seed)); } catch (e) {}
+      return seed.slice();
+    }
+    function save(k, arr) { try { localStorage.setItem(k, JSON.stringify(arr)); } catch (e) {} }
+    var norm = function (s) { return (s || '').toString().trim().toLowerCase(); };
+
+    // Recherches d'acheteurs pré-existantes (simulent la base du Club)
+    var searches = load(LS_SEARCHES, [
+      { marque: 'Ferrari', modele: '296', nom: 'Membre A-17', ville: 'Monaco', similaire: true },
+      { marque: 'Porsche', modele: '911 Turbo S', nom: 'Membre B-04', ville: 'Paris', similaire: true },
+      { marque: 'Range Rover', modele: '', nom: 'Membre C-22', ville: 'Genève', similaire: true },
+      { marque: 'Lamborghini', modele: 'Urus', nom: 'Membre D-09', ville: 'Cannes', similaire: true },
+      { marque: 'Mercedes', modele: 'G63', nom: 'Membre E-31', ville: 'Paris', similaire: true }
+    ]);
+    // Véhicules déjà déposés (pour les acheteurs)
+    var listings = load(LS_LISTINGS, [
+      { marque: 'Ferrari', modele: '296 GTB', annee: '2023', couleur: 'Rosso Corsa', ch: '830', ville: 'Monaco' },
+      { marque: 'Porsche', modele: '911 Turbo S', annee: '2022', couleur: 'Noir intense', ch: '650', ville: 'Paris' },
+      { marque: 'Range Rover', modele: 'Sport SV', annee: '2024', couleur: 'Gris', ch: '635', ville: 'Lyon' },
+      { marque: 'Bentley', modele: 'Continental GTC', annee: '2023', couleur: 'Vert British', ch: '659', ville: 'Cannes' }
+    ]);
+
+    function modelMatch(a, b) {
+      a = norm(a); b = norm(b);
+      if (!a || !b) return false;
+      var ta = a.split(/\s+/)[0], tb = b.split(/\s+/)[0];
+      return a.indexOf(b) !== -1 || b.indexOf(a) !== -1 || ta === tb;
+    }
+    // Compare un véhicule à une recherche -> 'exact' | 'similar' | null
+    function score(car, srch) {
+      if (norm(car.marque) !== norm(srch.marque)) return null;
+      if (!srch.modele || modelMatch(car.modele, srch.modele)) return 'exact';
+      return (srch.similaire === false) ? null : 'similar';
+    }
+
+    // Onglets
+    document.querySelectorAll('.tool-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tool-tab').forEach(function (x) { x.classList.remove('is-active'); });
+        document.querySelectorAll('.tool-panel').forEach(function (x) { x.classList.remove('is-active'); });
+        t.classList.add('is-active');
+        document.getElementById('panel-' + t.dataset.panel).classList.add('is-active');
+      });
+    });
+
+    // Prévisualisation photos
+    var photos = document.getElementById('s-photos');
+    var preview = document.getElementById('s-preview');
+    if (photos) photos.addEventListener('change', function () {
+      preview.innerHTML = '';
+      Array.prototype.slice.call(photos.files).slice(0, 12).forEach(function (f) {
+        var img = document.createElement('img');
+        img.src = URL.createObjectURL(f);
+        preview.appendChild(img);
+      });
+    });
+
+    function sendEmail(subject, data) {
+      try {
+        fetch('https://formsubmit.co/ajax/' + SFMATCH_EMAIL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(Object.assign({ _subject: subject }, data))
+        }).catch(function () {});
+      } catch (e) {}
+    }
+
+    // Dépôt vendeur
+    var formSell = document.getElementById('formSell');
+    if (formSell) formSell.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var car = {
+        marque: val('s-marque'), modele: val('s-modele'), annee: val('s-annee'), ch: val('s-ch'),
+        couleur: val('s-couleur'), finition: val('s-finition'), km: val('s-km'), prix: val('s-prix'),
+        desc: val('s-desc'), nom: val('s-nom'), contact: val('s-contact'),
+        photos: photos ? photos.files.length : 0, ville: ''
+      };
+      listings.unshift(car); save(LS_LISTINGS, listings);
+      sendEmail('SF Match — Nouveau véhicule à vendre : ' + car.marque + ' ' + car.modele, car);
+
+      var exact = [], similar = [];
+      searches.forEach(function (s) { var r = score(car, s); if (r === 'exact') exact.push(s); else if (r === 'similar') similar.push(s); });
+      var total = exact.length + similar.length;
+
+      var box = document.getElementById('matchSell');
+      document.getElementById('matchSellCount').textContent = total > 0 ? (total + (total > 1 ? ' acheteurs' : ' acheteur') + ' en attente de ce véhicule') : 'Annonce enregistrée';
+      document.getElementById('matchSellText').textContent = total > 0
+        ? (exact.length + ' correspondance(s) exacte(s), ' + similar.length + ' similaire(s). Mise en relation en cours.')
+        : 'Aucune recherche active pour l’instant — vous serez alerté dès qu’un acheteur correspondra.';
+      var list = document.getElementById('matchSellList'); list.innerHTML = '';
+      exact.concat(similar).slice(0, 6).forEach(function (s, i) {
+        var li = document.createElement('li');
+        var typ = i < exact.length ? 'Correspondance exacte' : 'Modèle similaire';
+        li.innerHTML = '<span><b>' + s.nom + '</b> · ' + (s.ville || '—') + '</span><span>' + typ + '</span>';
+        list.appendChild(li);
+      });
+      box.classList.add('is-visible');
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    // Alerte acheteur
+    var formBuy = document.getElementById('formBuy');
+    if (formBuy) formBuy.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var srch = {
+        marque: val('b-marque'), modele: val('b-modele'), budget: val('b-budget'), annee: val('b-annee'),
+        similaire: document.getElementById('b-similaire').checked, desc: val('b-desc'),
+        nom: val('b-nom'), contact: val('b-contact'), ville: ''
+      };
+      searches.unshift(srch); save(LS_SEARCHES, searches);
+      sendEmail('SF Match — Nouvelle recherche acheteur : ' + srch.marque + ' ' + srch.modele, srch);
+
+      var exact = [], similar = [];
+      listings.forEach(function (c) { var r = score(c, srch); if (r === 'exact') exact.push(c); else if (r === 'similar') similar.push(c); });
+      var total = exact.length + similar.length;
+
+      var box = document.getElementById('matchBuy');
+      document.getElementById('matchBuyCount').textContent = total > 0 ? (total + (total > 1 ? ' véhicules disponibles' : ' véhicule disponible') + ' pour vous') : 'Alerte créée';
+      document.getElementById('matchBuyText').textContent = total > 0
+        ? (exact.length + ' correspondance(s) exacte(s), ' + similar.length + ' similaire(s). Un conseiller vous met en relation.')
+        : 'Aucun véhicule correspondant pour l’instant — vous serez notifié dès qu’une opportunité se présente.';
+      var list = document.getElementById('matchBuyList'); list.innerHTML = '';
+      exact.concat(similar).slice(0, 6).forEach(function (c, i) {
+        var li = document.createElement('li');
+        var typ = i < exact.length ? 'Exact' : 'Similaire';
+        li.innerHTML = '<span><b>' + c.marque + ' ' + c.modele + '</b> · ' + (c.annee || '') + (c.couleur ? ' · ' + c.couleur : '') + '</span><span>' + typ + '</span>';
+        list.appendChild(li);
+      });
+      box.classList.add('is-visible');
+      box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+
+    function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+  })();
+  </script>
+</body>
+</html>

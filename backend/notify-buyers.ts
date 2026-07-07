@@ -12,7 +12,7 @@ const sb = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
 );
 const RESEND = Deno.env.get("RESEND_API_KEY")!;
-const INTERNAL = Deno.env.get("SFMATCH_INTERNAL_EMAIL") ?? "etude@arnaud-enr.com";
+const INTERNAL = Deno.env.get("SFMATCH_INTERNAL_EMAIL") ?? "contact@sfclub-paris.com";
 const FROM = Deno.env.get("SFMATCH_FROM") ?? "SF Club Paris <onboarding@resend.dev>";
 
 const norm = (s: unknown) => (s ?? "").toString().trim().toLowerCase();

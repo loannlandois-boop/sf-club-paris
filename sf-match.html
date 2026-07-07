@@ -325,9 +325,16 @@
         return _sb;
       });
     }
+    var DB_COLS = {
+      listings: ['marque', 'modele', 'annee', 'ch', 'couleur', 'finition', 'km', 'prix', 'desc', 'nom', 'contact', 'photos'],
+      searches: ['marque', 'modele', 'budget', 'annee', 'similaire', 'desc', 'nom', 'contact']
+    };
     function pushToDB(table, record) {
       if (!SFMATCH_SUPABASE.url || !SFMATCH_SUPABASE.anonKey) return;
-      getSB().then(function (c) { return c.from(table).insert([record]); }).catch(function () {});
+      var allow = DB_COLS[table] || [];
+      var clean = {};
+      allow.forEach(function (k) { if (record[k] !== undefined) clean[k] = record[k]; });
+      getSB().then(function (c) { return c.from(table).insert([clean]); }).catch(function () {});
     }
 
     // Dépôt vendeur

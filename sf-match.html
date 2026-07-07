@@ -230,6 +230,7 @@
     </div>
   </footer>
 
+  <script src="vehicles.js"></script>
   <script src="script.js"></script>
   <script>
   /* ===== SF MATCH — moteur de mise en relation ===== */
@@ -279,6 +280,7 @@
     }
     // Compare un véhicule à une recherche -> 'exact' | 'similar' | null
     function score(car, srch) {
+      if (window.sfMatch) return window.sfMatch(car, srch, srch.similaire !== false);
       if (norm(car.marque) !== norm(srch.marque)) return null;
       if (!srch.modele || modelMatch(car.modele, srch.modele)) return 'exact';
       return (srch.similaire === false) ? null : 'similar';
@@ -293,6 +295,25 @@
         document.getElementById('panel-' + t.dataset.panel).classList.add('is-active');
       });
     });
+
+    // Autocomplétion depuis la base de véhicules réels
+    (function () {
+      if (!window.SF_VEHICLES) return;
+      var marques = [], models = [];
+      SF_VEHICLES.forEach(function (v) {
+        if (marques.indexOf(v.marque) === -1) marques.push(v.marque);
+        if (models.indexOf(v.modele) === -1) models.push(v.modele);
+      });
+      marques.sort(); models.sort();
+      function mkList(id, arr) {
+        var dl = document.createElement('datalist'); dl.id = id;
+        arr.forEach(function (o) { var op = document.createElement('option'); op.value = o; dl.appendChild(op); });
+        document.body.appendChild(dl);
+      }
+      mkList('dl-marques', marques); mkList('dl-models', models);
+      ['s-marque', 'b-marque'].forEach(function (id) { var e = document.getElementById(id); if (e) e.setAttribute('list', 'dl-marques'); });
+      ['s-modele', 'b-modele'].forEach(function (id) { var e = document.getElementById(id); if (e) e.setAttribute('list', 'dl-models'); });
+    })();
 
     // Prévisualisation photos
     var photos = document.getElementById('s-photos');
@@ -388,20 +409,49 @@
       listings.forEach(function (c) { var r = score(c, srch); if (r === 'exact') exact.push(c); else if (r === 'similar') similar.push(c); });
       var total = exact.length + similar.length;
 
+      // Type de véhicule détecté (intelligence)
+      var seg = window.sfSegmentOf ? sfSegmentOf(srch.marque, srch.modele) : 'autre';
+      var segLabel = window.sfSegmentLabel ? sfSegmentLabel(seg) : '';
+
+      // Suggestions "réseau" : modèles réels du même type, si peu/pas de correspondances directes
+      var netto = [];
+      if (window.SF_VEHICLES && srch.similaire !== false) {
+        var seen = {};
+        exact.concat(similar).forEach(function (c) { seen[(c.marque + ' ' + c.modele).toLowerCase()] = 1; });
+        SF_VEHICLES.forEach(function (v) {
+          if (netto.length >= 8) return;
+          var key = (v.marque + ' ' + v.modele).toLowerCase();
+          if (seen[key]) return;
+          if (window.sfMatch({ marque: v.marque, modele: v.modele }, srch, true)) netto.push(v);
+        });
+      }
+
       srch.correspondances = total ? exact.concat(similar).map(function (c) { return c.marque + ' ' + c.modele + (c.annee ? ' (' + c.annee + ')' : ''); }).join(' · ') : 'aucun véhicule correspondant pour l’instant';
       sendEmail('SF Match — Recherche ' + srch.marque + ' ' + srch.modele + ' — ' + total + ' véhicule(s) correspondant(s)', srch);
       pushToDB('searches', srch);
 
       var box = document.getElementById('matchBuy');
-      document.getElementById('matchBuyCount').textContent = total > 0 ? (total + (total > 1 ? ' véhicules disponibles' : ' véhicule disponible') + ' pour vous') : 'Alerte créée';
-      document.getElementById('matchBuyText').textContent = total > 0
-        ? (exact.length + ' correspondance(s) exacte(s), ' + similar.length + ' similaire(s). Un conseiller vous met en relation.')
-        : 'Aucun véhicule correspondant pour l’instant — vous serez notifié dès qu’une opportunité se présente.';
+      document.getElementById('matchBuyCount').textContent = total > 0
+        ? (total + (total > 1 ? ' véhicules disponibles' : ' véhicule disponible') + ' pour vous')
+        : (netto.length ? 'Modèles similaires trouvés' : 'Alerte créée');
+      document.getElementById('matchBuyText').textContent =
+        (segLabel ? 'Type détecté : ' + segLabel + '. ' : '') +
+        (total > 0
+          ? (exact.length + ' correspondance(s) exacte(s), ' + similar.length + ' similaire(s). Un conseiller vous met en relation.')
+          : (netto.length
+            ? 'Aucune annonce en direct, mais voici des modèles du même type dans notre réseau. Un conseiller vous recontacte.'
+            : 'Aucun véhicule correspondant pour l’instant — vous serez notifié dès qu’une opportunité se présente.'));
+
       var list = document.getElementById('matchBuyList'); list.innerHTML = '';
       exact.concat(similar).slice(0, 6).forEach(function (c, i) {
         var li = document.createElement('li');
         var typ = i < exact.length ? 'Exact' : 'Similaire';
         li.innerHTML = '<span><b>' + c.marque + ' ' + c.modele + '</b> · ' + (c.annee || '') + (c.couleur ? ' · ' + c.couleur : '') + '</span><span>' + typ + '</span>';
+        list.appendChild(li);
+      });
+      netto.slice(0, Math.max(0, 8 - Math.min(6, total))).forEach(function (v) {
+        var li = document.createElement('li');
+        li.innerHTML = '<span><b>' + v.marque + ' ' + v.modele + '</b> · ' + (window.sfSegmentLabel ? sfSegmentLabel(v.seg) : '') + '</span><span>Réseau</span>';
         list.appendChild(li);
       });
       box.classList.add('is-visible');

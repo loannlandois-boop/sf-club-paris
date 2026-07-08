@@ -454,6 +454,22 @@
         li.innerHTML = '<span><b>' + v.marque + ' ' + v.modele + '</b> · ' + (window.sfSegmentLabel ? sfSegmentLabel(v.seg) : '') + '</span><span>Réseau</span>';
         list.appendChild(li);
       });
+
+      // Annonces réelles du marché (inventaire agrégé) — même segment
+      if (SFMATCH_SUPABASE.url && SFMATCH_SUPABASE.anonKey && seg && seg !== 'autre') {
+        fetch(SFMATCH_SUPABASE.url + '/rest/v1/inventory?segment=eq.' + encodeURIComponent(seg) + '&limit=6&order=updated_at.desc', {
+          headers: { apikey: SFMATCH_SUPABASE.anonKey, Authorization: 'Bearer ' + SFMATCH_SUPABASE.anonKey }
+        }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+          (rows || []).forEach(function (v) {
+            var li = document.createElement('li');
+            var label = v.marque + ' ' + v.modele + (v.annee ? ' (' + v.annee + ')' : '') + (v.prix ? ' · ' + v.prix + ' €' : '');
+            var right = v.url ? '<a href="' + v.url + '" target="_blank" rel="noopener" class="gold">Voir</a>' : 'Marché';
+            li.innerHTML = '<span><b>' + label + '</b></span><span>' + right + '</span>';
+            list.appendChild(li);
+          });
+        }).catch(function () {});
+      }
+
       box.classList.add('is-visible');
       box.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });

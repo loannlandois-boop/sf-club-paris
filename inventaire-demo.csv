@@ -1,0 +1,16 @@
+source,ext_id,marque,modele,annee,prix,couleur,km,segment,url,ville
+Demo SF Club,DEMO-001,Ferrari,296 GTB,2023,289000,Rosso Corsa,4200,supercar,https://sfclub-paris.com/vehicule/demo-001,Paris
+Demo SF Club,DEMO-002,Lamborghini,Huracan Evo,2022,239000,Verde Mantis,8900,supercar,https://sfclub-paris.com/vehicule/demo-002,Cannes
+Demo SF Club,DEMO-003,Porsche,911 Turbo S,2023,239000,Gris GT Argente,6100,sport,https://sfclub-paris.com/vehicule/demo-003,Monaco
+Demo SF Club,DEMO-004,McLaren,720S,2021,219000,Orange Papaya,12500,supercar,https://sfclub-paris.com/vehicule/demo-004,Paris
+Demo SF Club,DEMO-005,Aston Martin,DB12,2024,255000,Vert British,1500,gt,https://sfclub-paris.com/vehicule/demo-005,Monaco
+Demo SF Club,DEMO-006,Bentley,Continental GT Speed,2023,285000,Noir Onyx,7300,gt,https://sfclub-paris.com/vehicule/demo-006,Paris
+Demo SF Club,DEMO-007,Rolls-Royce,Cullinan,2022,395000,Noir Diamant,9800,suv_luxe,https://sfclub-paris.com/vehicule/demo-007,Monaco
+Demo SF Club,DEMO-008,Lamborghini,Urus S,2023,265000,Gris Nardo,5400,suv_luxe,https://sfclub-paris.com/vehicule/demo-008,Cannes
+Demo SF Club,DEMO-009,Ferrari,Roma,2022,215000,Blu Corsa,11000,supercar,https://sfclub-paris.com/vehicule/demo-009,Paris
+Demo SF Club,DEMO-010,Porsche,Cayenne Turbo GT,2023,205000,Blanc Carrara,8700,suv,https://sfclub-paris.com/vehicule/demo-010,Nice
+Demo SF Club,DEMO-011,Mercedes,G 63 AMG,2023,215000,Noir Obsidienne,6600,suv_luxe,https://sfclub-paris.com/vehicule/demo-011,Paris
+Demo SF Club,DEMO-012,Audi,RS6 Avant,2022,135000,Gris Daytona,15200,sport,https://sfclub-paris.com/vehicule/demo-012,Lyon
+Demo SF Club,DEMO-013,Aston Martin,DBX707,2023,265000,Bleu Zaffre,4300,suv_luxe,https://sfclub-paris.com/vehicule/demo-013,Monaco
+Demo SF Club,DEMO-014,Bentley,Bentayga,2022,225000,Blanc Glacier,10400,suv_luxe,https://sfclub-paris.com/vehicule/demo-014,Cannes
+Demo SF Club,DEMO-015,Ferrari,812 GTS,2021,415000,Giallo Modena,7800,supercar,https://sfclub-paris.com/vehicule/demo-015,Paris

@@ -296,14 +296,17 @@
       });
     });
 
-    // Autocomplétion depuis la base de véhicules réels
+    // Autocomplétion depuis la base de véhicules réels (curated + NHTSA gratuit)
     (function () {
-      if (!window.SF_VEHICLES) return;
       var marques = [], models = [];
-      SF_VEHICLES.forEach(function (v) {
+      if (window.SF_VEHICLES) SF_VEHICLES.forEach(function (v) {
         if (marques.indexOf(v.marque) === -1) marques.push(v.marque);
-        if (models.indexOf(v.modele) === -1) models.push(v.modele);
       });
+      if (window.SF_MODELS && SF_MODELS.length) { models = SF_MODELS.slice(); }
+      else if (window.SF_VEHICLES) SF_VEHICLES.forEach(function (v) {
+        if (models.indexOf(v.marque + ' ' + v.modele) === -1) models.push(v.marque + ' ' + v.modele);
+      });
+      if (!marques.length && !models.length) return;
       marques.sort(); models.sort();
       function mkList(id, arr) {
         var dl = document.createElement('datalist'); dl.id = id;

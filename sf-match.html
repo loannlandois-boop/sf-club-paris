@@ -459,8 +459,9 @@
       });
 
       // Annonces réelles du marché (inventaire agrégé) — même segment
-      if (SFMATCH_SUPABASE.url && SFMATCH_SUPABASE.anonKey && seg && seg !== 'autre') {
-        fetch(SFMATCH_SUPABASE.url + '/rest/v1/inventory?segment=eq.' + encodeURIComponent(seg) + '&limit=6&order=updated_at.desc', {
+      if (SFMATCH_SUPABASE.url && SFMATCH_SUPABASE.anonKey) {
+        var invQ = 'or=(segment.eq.' + encodeURIComponent(seg) + ',marque.ilike.*' + encodeURIComponent(srch.marque || '') + '*)';
+        fetch(SFMATCH_SUPABASE.url + '/rest/v1/inventory?' + invQ + '&limit=8&order=updated_at.desc', {
           headers: { apikey: SFMATCH_SUPABASE.anonKey, Authorization: 'Bearer ' + SFMATCH_SUPABASE.anonKey }
         }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
           (rows || []).forEach(function (v) {

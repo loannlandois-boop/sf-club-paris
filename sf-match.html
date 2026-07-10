@@ -358,7 +358,16 @@
       var allow = DB_COLS[table] || [];
       var clean = {};
       allow.forEach(function (k) { if (record[k] !== undefined) clean[k] = record[k]; });
-      getSB().then(function (c) { return c.from(table).insert([clean]); }).catch(function () {});
+      fetch(SFMATCH_SUPABASE.url + '/rest/v1/' + table, {
+        method: 'POST',
+        headers: {
+          apikey: SFMATCH_SUPABASE.anonKey,
+          Authorization: 'Bearer ' + SFMATCH_SUPABASE.anonKey,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal'
+        },
+        body: JSON.stringify(clean)
+      }).catch(function () {});
     }
 
     // Dépôt vendeur

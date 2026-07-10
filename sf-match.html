@@ -296,28 +296,6 @@
       });
     });
 
-    // Autocomplétion depuis la base de véhicules réels (curated + NHTSA gratuit)
-    (function () {
-      var marques = [], models = [];
-      if (window.SF_VEHICLES) SF_VEHICLES.forEach(function (v) {
-        if (marques.indexOf(v.marque) === -1) marques.push(v.marque);
-      });
-      if (window.SF_MODELS && SF_MODELS.length) { models = SF_MODELS.slice(); }
-      else if (window.SF_VEHICLES) SF_VEHICLES.forEach(function (v) {
-        if (models.indexOf(v.marque + ' ' + v.modele) === -1) models.push(v.marque + ' ' + v.modele);
-      });
-      if (!marques.length && !models.length) return;
-      marques.sort(); models.sort();
-      function mkList(id, arr) {
-        var dl = document.createElement('datalist'); dl.id = id;
-        arr.forEach(function (o) { var op = document.createElement('option'); op.value = o; dl.appendChild(op); });
-        document.body.appendChild(dl);
-      }
-      mkList('dl-marques', marques); mkList('dl-models', models);
-      ['s-marque', 'b-marque'].forEach(function (id) { var e = document.getElementById(id); if (e) e.setAttribute('list', 'dl-marques'); });
-      ['s-modele', 'b-modele'].forEach(function (id) { var e = document.getElementById(id); if (e) e.setAttribute('list', 'dl-models'); });
-    })();
-
     // Prévisualisation photos
     var photos = document.getElementById('s-photos');
     var preview = document.getElementById('s-preview');

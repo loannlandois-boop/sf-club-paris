@@ -23,12 +23,14 @@ function modelMatch(a: string, b: string) {
   return a.includes(b) || b.includes(a) || ta === tb;
 }
 async function email(to: string, subject: string, html: string) {
-  if (!to) return;
-  await fetch("https://api.resend.com/emails", {
+  if (!to) { console.log("email() skip: destinataire vide"); return; }
+  const r = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { "Authorization": `Bearer ${RESEND}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: FROM, to, subject, html }),
   });
+  const txt = await r.text();
+  console.log(`email() -> ${to} | status ${r.status} | ${txt}`);
 }
 
 Deno.serve(async (req) => {
@@ -36,6 +38,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const rec = body.record ?? body;
     const table = body.table ?? (rec.photos !== undefined ? "listings" : "searches");
+    console.log("payload recu:", JSON.stringify(body));
+    console.log("table detectee:", table, "| contact:", rec.contact);
 
     if (table === "listings") {
       const car = rec;

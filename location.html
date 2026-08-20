@@ -74,6 +74,38 @@
     </section>
     <hr class="gold-line">
 
+    <!-- ===== DISPONIBILITÉ & TARIF ===== -->
+    <section class="section" id="dispo" style="padding-top:0">
+      <div class="container" style="max-width:820px">
+        <div class="section-head">
+          <span class="eyebrow">Moteur intelligent</span>
+          <h2>Vérifiez la disponibilité &amp; le tarif</h2>
+          <p class="muted">Choisissez vos dates : le prix se calcule automatiquement selon la durée. Si le véhicule est déjà réservé, nous vous proposons un équivalent disponible.</p>
+        </div>
+
+        <form class="form-card" id="formDispo">
+          <div class="form-grid">
+            <div class="field"><label for="d-marque">Marque</label><input type="text" id="d-marque" placeholder="Ferrari, Porsche…" required></div>
+            <div class="field"><label for="d-modele">Modèle (optionnel)</label><input type="text" id="d-modele" placeholder="296 GTB, 911 Turbo S…"></div>
+            <div class="field"><label for="d-debut">Date début</label><input type="date" id="d-debut" required></div>
+            <div class="field"><label for="d-fin">Date fin</label><input type="date" id="d-fin" required></div>
+          </div>
+          <div class="form-grid" style="margin-top:20px">
+            <div class="field"><label for="d-nom">Votre nom</label><input type="text" id="d-nom" required></div>
+            <div class="field"><label for="d-contact">Email ou téléphone</label><input type="text" id="d-contact" required></div>
+          </div>
+          <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Vérifier la disponibilité</button>
+
+          <div class="match" id="dispoResult">
+            <div class="match__count" id="dispoTitle"></div>
+            <p class="muted" style="margin:.4rem 0 0;font-size:.9rem" id="dispoText"></p>
+            <ul class="match__list" id="dispoList"></ul>
+          </div>
+        </form>
+      </div>
+    </section>
+    <hr class="gold-line">
+
     <!-- ===== COMMENT ÇA MARCHE ===== -->
     <section class="section">
       <div class="container">
@@ -206,5 +238,101 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://yuogtyjnwhkrocxmjjtj.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1b2d0eWpud2hrcm9jeG1qanRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzI5NjYsImV4cCI6MjA5OTAwODk2Nn0.v1CKYGOUmPG77oPZXQoOD5CNQqjDcpH2GKR87Nws73k';
+    var INTERNAL_EMAIL = 'contact@sfclub-paris.com';
+    var form = document.getElementById('formDispo');
+    if (!form) return;
+
+    function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : 'sur devis'; }
+    function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
+
+    function demanderReservation(vehicule, debut, fin, prixTotal, btn) {
+      var payload = {
+        _subject: 'Demande de réservation — ' + vehicule.marque + ' ' + vehicule.modele,
+        vehicule: vehicule.marque + ' ' + vehicule.modele + ' (' + (vehicule.agence_nom || 'agence à confirmer') + ')',
+        dates: debut + ' → ' + fin,
+        prix_estime: fmtPrix(prixTotal),
+        nom: val('d-nom'),
+        contact: val('d-contact')
+      };
+      fetch('https://formsubmit.co/ajax/' + INTERNAL_EMAIL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(function () {});
+      if (btn) { btn.textContent = 'Demande envoyée ✓'; btn.disabled = true; }
+    }
+
+    function render(res, debut, fin) {
+      var box = document.getElementById('dispoResult');
+      var title = document.getElementById('dispoTitle');
+      var text = document.getElementById('dispoText');
+      var list = document.getElementById('dispoList');
+      list.innerHTML = '';
+      box.classList.add('is-visible');
+
+      if (res.disponible) {
+        title.textContent = 'Disponible — ' + fmtPrix(res.prix_total);
+        text.textContent = res.duree + ' jour(s) × ' + fmtPrix(res.prix_jour) + '/jour pour ' + res.vehicule.marque + ' ' + res.vehicule.modele + '. Un conseiller confirme la réservation.';
+        var li = document.createElement('li');
+        var span = document.createElement('span');
+        span.innerHTML = '<b>' + res.vehicule.marque + ' ' + res.vehicule.modele + '</b> · ' + (res.vehicule.agence_nom || '—');
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn btn--solid'; btn.textContent = 'Demander cette réservation';
+        btn.addEventListener('click', function () { demanderReservation(res.vehicule, debut, fin, res.prix_total, btn); });
+        li.appendChild(span); li.appendChild(btn);
+        list.appendChild(li);
+      } else if (res.alternatives && res.alternatives.length) {
+        title.textContent = 'Indisponible pour ces dates';
+        text.textContent = 'Voici des véhicules équivalents disponibles, avec leur tarif pour cette durée :';
+        res.alternatives.forEach(function (a) {
+          var li = document.createElement('li');
+          var span = document.createElement('span');
+          span.innerHTML = '<b>' + a.vehicule.marque + ' ' + a.vehicule.modele + '</b> · ' + (a.vehicule.agence_nom || '—') + ' · ' + fmtPrix(a.prix_total);
+          var btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'btn'; btn.textContent = 'Demander celle-ci';
+          btn.addEventListener('click', function () { demanderReservation(a.vehicule, debut, fin, a.prix_total, btn); });
+          li.appendChild(span); li.appendChild(btn);
+          list.appendChild(li);
+        });
+      } else {
+        title.textContent = 'Indisponible pour ces dates';
+        text.textContent = "Aucune alternative disponible pour l'instant dans ce segment. Transmettez votre demande, un conseiller vous propose une solution sous 24h.";
+        var li2 = document.createElement('li');
+        var span2 = document.createElement('span');
+        span2.textContent = val('d-marque') + ' ' + val('d-modele');
+        var btn2 = document.createElement('button');
+        btn2.type = 'button'; btn2.className = 'btn btn--solid'; btn2.textContent = 'Transmettre ma demande';
+        btn2.addEventListener('click', function () {
+          demanderReservation({ marque: val('d-marque'), modele: val('d-modele') }, debut, fin, null, btn2);
+        });
+        li2.appendChild(span2); li2.appendChild(btn2);
+        list.appendChild(li2);
+      }
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var marque = val('d-marque'), modele = val('d-modele');
+      var debut = val('d-debut'), fin = val('d-fin');
+      if (!marque || !debut || !fin) return;
+      fetch(SB_URL + '/functions/v1/agenda-availability', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ marque: marque, modele: modele, date_debut: debut, date_fin: fin })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        render(res, debut, fin);
+      }).catch(function () {
+        var box = document.getElementById('dispoResult');
+        document.getElementById('dispoTitle').textContent = 'Service momentanément indisponible';
+        document.getElementById('dispoText').textContent = 'Contactez-nous directement, un conseiller vérifie la disponibilité pour vous.';
+        box.classList.add('is-visible');
+      });
+    });
+  })();
+  </script>
 </body>
 </html>

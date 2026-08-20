@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agenda — SF CLUB PARIS</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .agenda-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 1rem 1.2rem; border: 1px solid var(--border); border-top: none; font-size: .92rem; }
+    .agenda-row:first-of-type { border-top: 1px solid var(--border); }
+    .agenda-row__main b { color: #fff; }
+    .agenda-row__main span { color: var(--text-muted); display: block; font-size: .82rem; margin-top: 2px; }
+    .agenda-row__actions { display: flex; align-items: center; gap: 10px; }
+    .agenda-status { padding: .3em .7em; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--border); }
+    .agenda-status--confirmee { border-color: var(--gold); color: var(--gold); }
+    .agenda-status--option { border-color: #999; color: #ccc; }
+    .agenda-status--annulee { border-color: #555; color: #666; text-decoration: line-through; }
+    .agenda-link { background: none; border: none; color: var(--text-muted); text-decoration: underline; cursor: pointer; font-size: .8rem; font-family: inherit; }
+    .agenda-link:hover { color: #fff; }
+    #agendaDash { display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav><ul class="nav__menu"><li><a href="index.html">Site public</a></li></ul></nav>
+      <div class="nav__actions"><button class="btn btn--solid nav__cta" id="btnLogout" style="display:none">Déconnexion</button></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== LOGIN ===== -->
+    <section class="club-login" id="agendaLogin">
+      <div class="container" style="max-width:440px">
+        <div class="center" style="margin-bottom:30px">
+          <span class="eyebrow reveal">Réservé à l'équipe</span>
+          <h1 class="reveal" data-delay="1" style="font-size:clamp(2.4rem,7vw,3.2rem)">Agenda SF</h1>
+          <p class="muted reveal" data-delay="2">Connexion avec votre compte Supabase (équipe SF Club Paris).</p>
+        </div>
+        <form class="form-card" id="formAgendaLogin">
+          <div class="field"><label for="ag-email">Email</label><input type="email" id="ag-email" autocomplete="username" required></div>
+          <div class="field"><label for="ag-pass">Mot de passe</label><input type="password" id="ag-pass" autocomplete="current-password" required></div>
+          <p class="muted" id="agLoginError" style="color:#d66;font-size:.85rem;display:none"></p>
+          <button type="submit" class="btn btn--solid btn--lg btn--block">Se connecter</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="section" id="agendaDash">
+      <div class="container">
+
+        <div class="section-head">
+          <span class="eyebrow">Multi-agences</span>
+          <h2>Nouvelle recherche / réservation</h2>
+        </div>
+
+        <form class="form-card" id="formCheck" style="max-width:820px">
+          <div class="form-grid">
+            <div class="field">
+              <label for="ck-vehicule">Véhicule</label>
+              <select id="ck-vehicule" required><option value="">Chargement…</option></select>
+            </div>
+            <div class="field"><label for="ck-debut">Date début</label><input type="date" id="ck-debut" required></div>
+            <div class="field"><label for="ck-fin">Date fin</label><input type="date" id="ck-fin" required></div>
+          </div>
+          <div class="form-grid" style="margin-top:20px">
+            <div class="field"><label for="ck-nom">Nom du client</label><input type="text" id="ck-nom"></div>
+            <div class="field"><label for="ck-contact">Email / téléphone client</label><input type="text" id="ck-contact"></div>
+          </div>
+          <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Vérifier la disponibilité</button>
+
+          <div class="match" id="ckResult">
+            <div class="match__count" id="ckResultTitle"></div>
+            <p class="muted" style="margin:.4rem 0 0;font-size:.9rem" id="ckResultText"></p>
+            <ul class="match__list" id="ckResultList"></ul>
+          </div>
+        </form>
+
+        <hr class="gold-line" style="margin:56px 0">
+
+        <div class="section-head">
+          <span class="eyebrow">Vue d'ensemble</span>
+          <h2>Réservations à venir</h2>
+        </div>
+        <div id="resList"><p class="muted">Chargement…</p></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom" style="border-top:0;justify-content:center">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://yuogtyjnwhkrocxmjjtj.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1b2d0eWpud2hrcm9jeG1qanRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0MzI5NjYsImV4cCI6MjA5OTAwODk2Nn0.v1CKYGOUmPG77oPZXQoOD5CNQqjDcpH2GKR87Nws73k';
+
+    function getSession() {
+      try { return JSON.parse(sessionStorage.getItem('sf_agenda_session') || 'null'); } catch (e) { return null; }
+    }
+    function setSession(s) { try { sessionStorage.setItem('sf_agenda_session', JSON.stringify(s)); } catch (e) {} }
+    function clearSession() { try { sessionStorage.removeItem('sf_agenda_session'); } catch (e) {} }
+
+    function showLogin() {
+      document.getElementById('agendaLogin').style.display = '';
+      document.getElementById('agendaDash').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'none';
+    }
+    function showDash() {
+      document.getElementById('agendaLogin').style.display = 'none';
+      document.getElementById('agendaDash').style.display = '';
+      document.getElementById('btnLogout').style.display = '';
+      loadVehicules();
+      loadReservations();
+    }
+
+    // ---- Connexion (Supabase Auth) ----
+    var formLogin = document.getElementById('formAgendaLogin');
+    formLogin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('ag-email').value.trim();
+      var pass = document.getElementById('ag-pass').value;
+      var err = document.getElementById('agLoginError');
+      err.style.display = 'none';
+      fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pass })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { err.textContent = 'Identifiants incorrects.'; err.style.display = ''; return; }
+          setSession({ token: res.d.access_token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
+          showDash();
+        }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+    });
+
+    document.getElementById('btnLogout').addEventListener('click', function () {
+      clearSession(); showLogin();
+    });
+
+    // ---- Requête authentifiée avec refresh automatique ----
+    function authFetch(path, opts) {
+      opts = opts || {};
+      var s = getSession();
+      if (!s) return Promise.reject('no session');
+      function withToken(token) {
+        var headers = Object.assign({
+          apikey: SB_ANON,
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json'
+        }, opts.headers || {});
+        return fetch(SB_URL + path, Object.assign({}, opts, { headers: headers }));
+      }
+      if (Date.now() < s.exp - 5000) return withToken(s.token);
+      // token expiré -> refresh
+      return fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: s.refresh })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.access_token) { clearSession(); showLogin(); return Promise.reject('session expiree'); }
+        setSession({ token: d.access_token, refresh: d.refresh_token, exp: Date.now() + (d.expires_in || 3600) * 1000 });
+        return withToken(d.access_token);
+      });
+    }
+
+    // ---- Catalogue véhicules (lecture publique, pas besoin d'auth) ----
+    var vehicules = [];
+    function loadVehicules() {
+      fetch(SB_URL + '/rest/v1/agenda_vehicules?select=*&actif=eq.true&order=agence_nom.asc,marque.asc', {
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON }
+      }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+        vehicules = rows || [];
+        var sel = document.getElementById('ck-vehicule');
+        sel.innerHTML = vehicules.length ? '' : '<option value="">Aucun véhicule — importez le catalogue via CSV</option>';
+        vehicules.forEach(function (v) {
+          var op = document.createElement('option');
+          op.value = v.id;
+          op.textContent = v.marque + ' ' + v.modele + ' — ' + (v.agence_nom || 'Agence ?');
+          sel.appendChild(op);
+        });
+      }).catch(function () {});
+    }
+
+    // ---- Vérification dispo + prix ----
+    var formCheck = document.getElementById('formCheck');
+    var lastCheck = null;
+    formCheck.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var vId = document.getElementById('ck-vehicule').value;
+      var debut = document.getElementById('ck-debut').value;
+      var fin = document.getElementById('ck-fin').value;
+      if (!vId || !debut || !fin) return;
+      fetch(SB_URL + '/functions/v1/agenda-availability', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vehicule_id: Number(vId), date_debut: debut, date_fin: fin })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        lastCheck = res;
+        renderCheck(res, debut, fin);
+      }).catch(function () {
+        document.getElementById('ckResultTitle').textContent = 'Erreur';
+        document.getElementById('ckResultText').textContent = "Impossible de contacter le moteur de disponibilité.";
+        document.getElementById('ckResult').classList.add('is-visible');
+      });
+    });
+
+    function fmtPrix(n) { return n != null ? n.toLocaleString('fr-FR') + ' €' : '—'; }
+
+    function renderCheck(res, debut, fin) {
+      var box = document.getElementById('ckResult');
+      var title = document.getElementById('ckResultTitle');
+      var text = document.getElementById('ckResultText');
+      var list = document.getElementById('ckResultList');
+      list.innerHTML = '';
+      box.classList.add('is-visible');
+
+      if (res.disponible) {
+        title.textContent = 'Disponible — ' + fmtPrix(res.prix_total);
+        text.textContent = res.duree + ' jour(s) × ' + fmtPrix(res.prix_jour) + '/jour. ' + res.vehicule.marque + ' ' + res.vehicule.modele + ' (' + (res.vehicule.agence_nom || '—') + ').';
+        var li = document.createElement('li');
+        var btn = document.createElement('button');
+        btn.type = 'button'; btn.className = 'btn btn--solid'; btn.textContent = 'Confirmer la réservation';
+        btn.addEventListener('click', function () { confirmerReservation(res.vehicule.id, debut, fin, res.prix_total); });
+        li.appendChild(document.createElement('span'));
+        li.appendChild(btn);
+        list.appendChild(li);
+      } else {
+        title.textContent = 'Indisponible pour ces dates';
+        text.textContent = res.alternatives && res.alternatives.length
+          ? 'Voici des véhicules équivalents disponibles :'
+          : "Aucune alternative disponible dans ce segment pour l'instant.";
+        (res.alternatives || []).forEach(function (a) {
+          var li = document.createElement('li');
+          var left = document.createElement('span');
+          left.innerHTML = '<b>' + a.vehicule.marque + ' ' + a.vehicule.modele + '</b> · ' + (a.vehicule.agence_nom || '—') + ' · ' + fmtPrix(a.prix_total);
+          var btn = document.createElement('button');
+          btn.type = 'button'; btn.className = 'btn'; btn.textContent = 'Réserver celle-ci';
+          btn.addEventListener('click', function () { confirmerReservation(a.vehicule.id, debut, fin, a.prix_total); });
+          li.appendChild(left); li.appendChild(btn);
+          list.appendChild(li);
+        });
+      }
+    }
+
+    function confirmerReservation(vehiculeId, debut, fin, prixTotal) {
+      var nom = document.getElementById('ck-nom').value.trim();
+      var contact = document.getElementById('ck-contact').value.trim();
+      authFetch('/rest/v1/agenda_reservations', {
+        method: 'POST',
+        headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          vehicule_id: vehiculeId, date_debut: debut, date_fin: fin,
+          client_nom: nom, client_contact: contact, prix_total: prixTotal,
+          statut: 'confirmee', source: 'telephone'
+        })
+      }).then(function (r) {
+        if (r && r.ok) { formCheck.reset(); document.getElementById('ckResult').classList.remove('is-visible'); loadReservations(); }
+      }).catch(function () {});
+    }
+
+    // ---- Liste des réservations à venir ----
+    function loadReservations() {
+      var today = new Date().toISOString().slice(0, 10);
+      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&date_fin=gte.' + today + '&order=date_debut.asc')
+        .then(function (r) { return r ? r.json() : []; })
+        .then(function (rows) {
+          var box = document.getElementById('resList');
+          box.innerHTML = '';
+          if (!rows || !rows.length) { box.innerHTML = '<p class="muted">Aucune réservation à venir.</p>'; return; }
+          rows.forEach(function (r) {
+            var v = r.agenda_vehicules || {};
+            var row = document.createElement('div');
+            row.className = 'agenda-row';
+            row.innerHTML =
+              '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
+              '<span>' + r.date_debut + ' → ' + r.date_fin + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span></div>' +
+              '<div class="agenda-row__actions"><span class="agenda-status agenda-status--' + r.statut + '">' + r.statut + '</span>' +
+              '<span>' + fmtPrix(r.prix_total) + '</span>' +
+              (r.statut !== 'annulee' ? '<button type="button" class="agenda-link" data-id="' + r.id + '">Annuler</button>' : '') +
+              '</div>';
+            box.appendChild(row);
+          });
+          box.querySelectorAll('[data-id]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              authFetch('/rest/v1/agenda_reservations?id=eq.' + btn.dataset.id, {
+                method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ statut: 'annulee' })
+              }).then(function () { loadReservations(); });
+            });
+          });
+        }).catch(function () {});
+    }
+
+    // ---- Démarrage ----
+    var s = getSession();
+    if (s && Date.now() < s.exp + 30 * 24 * 3600 * 1000) showDash(); else showLogin();
+  })();
+  </script>
+</body>
+</html>

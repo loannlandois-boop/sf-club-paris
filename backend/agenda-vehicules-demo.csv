@@ -1,0 +1,9 @@
+agence_nom,marque,modele,annee,couleur,segment,prix_jour_1_3,prix_jour_4_6,prix_jour_7_13,prix_jour_14plus,actif
+Garage Riviera Prestige,Ferrari,296 GTB,2023,Rosso Corsa,supercar,1890,1590,1290,990,true
+Garage Riviera Prestige,Lamborghini,Huracan Evo,2022,Verde Mantis,supercar,1790,1490,1190,890,true
+Monaco Luxury Cars,Porsche,911 Turbo S,2023,Gris GT Argente,sport,890,750,590,450,true
+Monaco Luxury Cars,Bentley,Continental GT Speed,2023,Noir Onyx,gt,990,850,690,520,true
+Paris Auto Elite,Rolls-Royce,Cullinan,2022,Noir Diamant,suv_luxe,1690,1390,1090,850,true
+Paris Auto Elite,Range Rover,Sport SV,2024,Gris,suv_luxe,590,490,390,290,true
+Cote Azur Motors,McLaren,720S,2021,Orange Papaya,supercar,1690,1390,1090,820,true
+Cote Azur Motors,Aston Martin,DB12,2024,Vert British,gt,990,850,690,520,true

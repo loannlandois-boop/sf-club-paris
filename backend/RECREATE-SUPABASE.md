@@ -46,7 +46,7 @@ recolle dans le site (`sf-match.html`, `location.html`, `admin-agenda.html`) et 
 
 ## 9. Importer les données de test
 Une fois que je vous confirme le site à jour, **Table Editor** :
-- `inventory` → Import CSV → [`inventaire-demo.csv`](inventaire-demo.csv)
+- `inventory` → Import CSV → [`inventaire-demo.csv`](../inventaire-demo.csv)
 - `agenda_vehicules` → Import CSV → [`agenda-vehicules-demo.csv`](agenda-vehicules-demo.csv)
 
 ---

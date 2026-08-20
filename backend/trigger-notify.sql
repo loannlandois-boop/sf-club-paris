@@ -14,10 +14,10 @@ security definer
 as $$
 begin
   perform net.http_post(
-    url := 'https://<PROJECT_REF>.supabase.co/functions/v1/notify-buyers',
+    url := 'https://cuohpntjpkpwvhspzads.supabase.co/functions/v1/notify-buyers',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer <ANON_KEY>'
+      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ'
     ),
     body := jsonb_build_object('table', TG_TABLE_NAME, 'record', row_to_json(NEW))
   );

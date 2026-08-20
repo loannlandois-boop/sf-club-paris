@@ -10,10 +10,9 @@ dossier `backend/` — vous n'avez qu'à copier-coller.
 3. Une fois créé, allez dans **Project Settings → API** et gardez cette page ouverte : vous aurez
    besoin de **Project URL** et de la clé **anon public** à l'étape 8.
 
-## 2. Créer les tables (SQL Editor → New query → coller → Run), DANS CET ORDRE
-1. [`schema.sql`](schema.sql) — tables `listings` / `searches` (SF Match)
-2. [`inventory.sql`](inventory.sql) — table `inventory` (annonces marché)
-3. [`agenda-schema.sql`](agenda-schema.sql) — tables `agences` / `agenda_vehicules` / `agenda_reservations` (SF Agenda)
+## 2. Créer toutes les tables en une fois
+SQL Editor → New query → collez tout le contenu de [`SETUP-COMPLET.sql`](SETUP-COMPLET.sql) → **Run**.
+(Il contient les tables SF Match, l'inventaire marché, et SF Agenda — tout en un seul script.)
 
 ## 3. Compte e-mail (Resend)
 Si vous avez toujours votre compte sur resend.com (le domaine `sfclub-paris.com` y est probablement

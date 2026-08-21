@@ -32,11 +32,13 @@ function prixJour(v: any, jours: number): number | null {
 }
 
 async function estDisponible(vehiculeId: number, debut: string, fin: string) {
+  // Seules les réservations CONFIRMÉES bloquent le véhicule. Une demande "en_attente"
+  // (venant du site public, pas encore validée par l'équipe) ne bloque rien.
   const { data } = await sb
     .from("agenda_reservations")
     .select("id")
     .eq("vehicule_id", vehiculeId)
-    .neq("statut", "annulee")
+    .eq("statut", "confirmee")
     .lte("date_debut", fin)
     .gte("date_fin", debut)
     .limit(1);

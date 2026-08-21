@@ -19,6 +19,8 @@
     .agenda-status { padding: .3em .7em; font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; border: 1px solid var(--border); }
     .agenda-status--confirmee { border-color: var(--gold); color: var(--gold); }
     .agenda-status--option { border-color: #999; color: #ccc; }
+    .agenda-status--en_attente { border-color: #d9a441; color: #d9a441; }
+    .agenda-row__actions .btn { padding: .5em 1em; font-size: .75rem; }
     .agenda-status--annulee { border-color: #555; color: #666; text-decoration: line-through; }
     .agenda-link { background: none; border: none; color: var(--text-muted); text-decoration: underline; cursor: pointer; font-size: .8rem; font-family: inherit; }
     .agenda-link:hover { color: #fff; }
@@ -100,8 +102,17 @@
         <hr class="gold-line" style="margin:56px 0">
 
         <div class="section-head">
+          <span class="eyebrow">Depuis le site public</span>
+          <h2>Demandes en attente</h2>
+          <p class="muted">Tant qu'une demande n'est pas validée, le véhicule reste disponible pour les autres clients.</p>
+        </div>
+        <div id="pendingList"><p class="muted">Chargement…</p></div>
+
+        <hr class="gold-line" style="margin:56px 0">
+
+        <div class="section-head">
           <span class="eyebrow">Vue d'ensemble</span>
-          <h2>Réservations à venir</h2>
+          <h2>Réservations confirmées</h2>
         </div>
         <div id="resList"><p class="muted">Chargement…</p></div>
 
@@ -140,6 +151,7 @@
       document.getElementById('agendaDash').style.display = '';
       document.getElementById('btnLogout').style.display = '';
       loadVehicules();
+      loadPending();
       loadReservations();
     }
 
@@ -288,39 +300,70 @@
           statut: 'confirmee', source: 'telephone'
         })
       }).then(function (r) {
-        if (r && r.ok) { formCheck.reset(); document.getElementById('ckResult').classList.remove('is-visible'); loadReservations(); }
+        if (r && r.ok) { formCheck.reset(); document.getElementById('ckResult').classList.remove('is-visible'); loadPending(); loadReservations(); }
       }).catch(function () {});
     }
 
-    // ---- Liste des réservations à venir ----
-    function loadReservations() {
-      var today = new Date().toISOString().slice(0, 10);
-      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&date_fin=gte.' + today + '&order=date_debut.asc')
+    function setStatut(id, statut) {
+      return authFetch('/rest/v1/agenda_reservations?id=eq.' + id, {
+        method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ statut: statut })
+      }).then(function () { loadPending(); loadReservations(); });
+    }
+
+    function rowHTML(r, v) {
+      return '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
+        '<span>' + r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '') + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span>' +
+        (r.adresse_livraison ? '<span>Livraison : ' + r.adresse_livraison + '</span>' : '') + '</div>';
+    }
+
+    // ---- Demandes en attente (venant du site public) ----
+    function loadPending() {
+      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&statut=eq.en_attente&order=created_at.asc')
         .then(function (r) { return r ? r.json() : []; })
         .then(function (rows) {
-          var box = document.getElementById('resList');
+          var box = document.getElementById('pendingList');
           box.innerHTML = '';
-          if (!rows || !rows.length) { box.innerHTML = '<p class="muted">Aucune réservation à venir.</p>'; return; }
+          if (!rows || !rows.length) { box.innerHTML = '<p class="muted">Aucune demande en attente.</p>'; return; }
           rows.forEach(function (r) {
             var v = r.agenda_vehicules || {};
             var row = document.createElement('div');
             row.className = 'agenda-row';
-            row.innerHTML =
-              '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
-              '<span>' + r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '') + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span>' +
-              (r.adresse_livraison ? '<span>Livraison : ' + r.adresse_livraison + '</span>' : '') + '</div>' +
+            row.innerHTML = rowHTML(r, v) +
+              '<div class="agenda-row__actions"><span>' + fmtPrix(r.prix_total) + '</span>' +
+              '<button type="button" class="btn btn--solid" data-valider="' + r.id + '">Valider</button>' +
+              '<button type="button" class="agenda-link" data-refuser="' + r.id + '">Refuser</button></div>';
+            box.appendChild(row);
+          });
+          box.querySelectorAll('[data-valider]').forEach(function (btn) {
+            btn.addEventListener('click', function () { setStatut(btn.dataset.valider, 'confirmee'); });
+          });
+          box.querySelectorAll('[data-refuser]').forEach(function (btn) {
+            btn.addEventListener('click', function () { setStatut(btn.dataset.refuser, 'annulee'); });
+          });
+        }).catch(function () {});
+    }
+
+    // ---- Réservations confirmées à venir ----
+    function loadReservations() {
+      var today = new Date().toISOString().slice(0, 10);
+      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&statut=eq.confirmee&date_fin=gte.' + today + '&order=date_debut.asc')
+        .then(function (r) { return r ? r.json() : []; })
+        .then(function (rows) {
+          var box = document.getElementById('resList');
+          box.innerHTML = '';
+          if (!rows || !rows.length) { box.innerHTML = '<p class="muted">Aucune réservation confirmée à venir.</p>'; return; }
+          rows.forEach(function (r) {
+            var v = r.agenda_vehicules || {};
+            var row = document.createElement('div');
+            row.className = 'agenda-row';
+            row.innerHTML = rowHTML(r, v) +
               '<div class="agenda-row__actions"><span class="agenda-status agenda-status--' + r.statut + '">' + r.statut + '</span>' +
               '<span>' + fmtPrix(r.prix_total) + '</span>' +
-              (r.statut !== 'annulee' ? '<button type="button" class="agenda-link" data-id="' + r.id + '">Annuler</button>' : '') +
-              '</div>';
+              '<button type="button" class="agenda-link" data-id="' + r.id + '">Annuler</button></div>';
             box.appendChild(row);
           });
           box.querySelectorAll('[data-id]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-              authFetch('/rest/v1/agenda_reservations?id=eq.' + btn.dataset.id, {
-                method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ statut: 'annulee' })
-              }).then(function () { loadReservations(); });
-            });
+            btn.addEventListener('click', function () { setStatut(btn.dataset.id, 'annulee'); });
           });
         }).catch(function () {});
     }

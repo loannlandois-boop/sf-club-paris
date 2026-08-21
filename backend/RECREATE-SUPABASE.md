@@ -22,6 +22,8 @@ Sinon, recréez un compte et re-vérifiez le domaine (DNS Squarespace) comme la 
 ## 4. Déployer les fonctions (Edge Functions → Create a function)
 1. Nommée `notify-buyers` → collez [`notify-buyers.ts`](notify-buyers.ts) → **Deploy**
 2. Nommée `agenda-availability` → collez [`agenda-availability.ts`](agenda-availability.ts) → **Deploy**
+3. Nommée `agenda-request` → collez [`agenda-request.ts`](agenda-request.ts) → **Deploy**
+   (crée la demande "en attente" + envoie les e-mails quand un client demande une réservation sur le site)
 
 ## 5. Ajouter les secrets (Edge Functions → Manage secrets)
 - `RESEND_API_KEY` = votre clé Resend

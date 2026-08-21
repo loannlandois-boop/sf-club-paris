@@ -245,7 +245,6 @@
   (function () {
     var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
     var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
-    var INTERNAL_EMAIL = 'contact@sfclub-paris.com';
     var form = document.getElementById('formDispo');
     if (!form) return;
 
@@ -254,21 +253,25 @@
 
     function demanderReservation(vehicule, debut, fin, prixTotal, btn) {
       var payload = {
-        _subject: 'Demande de réservation — ' + vehicule.marque + ' ' + vehicule.modele,
-        vehicule: vehicule.marque + ' ' + vehicule.modele + ' (' + (vehicule.agence_nom || 'agence à confirmer') + ')',
-        dates: debut + ' → ' + fin,
-        horaires: val('d-heure-debut') + ' → ' + val('d-heure-fin'),
+        vehicule_id: vehicule.id || null,
+        marque: vehicule.marque, modele: vehicule.modele, agence_nom: vehicule.agence_nom || '',
+        date_debut: debut, date_fin: fin,
+        heure_debut: val('d-heure-debut'), heure_fin: val('d-heure-fin'),
         adresse_livraison: val('d-adresse'),
-        prix_estime: fmtPrix(prixTotal),
-        nom: val('d-nom'),
-        contact: val('d-contact')
+        prix_total: prixTotal,
+        nom: val('d-nom'), contact: val('d-contact')
       };
-      fetch('https://formsubmit.co/ajax/' + INTERNAL_EMAIL, {
+      if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
+      fetch(SB_URL + '/functions/v1/agenda-request', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
-      }).catch(function () {});
-      if (btn) { btn.textContent = 'Demande envoyée ✓'; btn.disabled = true; }
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (btn) btn.textContent = res && res.ok ? 'Demande envoyée ✓' : 'Erreur, réessayez';
+        if (!(res && res.ok) && btn) btn.disabled = false;
+      }).catch(function () {
+        if (btn) { btn.textContent = 'Erreur, réessayez'; btn.disabled = false; }
+      });
     }
 
     function render(res, debut, fin) {

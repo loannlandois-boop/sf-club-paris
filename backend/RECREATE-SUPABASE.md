@@ -24,11 +24,15 @@ Sinon, recréez un compte et re-vérifiez le domaine (DNS Squarespace) comme la 
 2. Nommée `agenda-availability` → collez [`agenda-availability.ts`](agenda-availability.ts) → **Deploy**
 3. Nommée `agenda-request` → collez [`agenda-request.ts`](agenda-request.ts) → **Deploy**
    (crée la demande "en attente" + envoie les e-mails quand un client demande une réservation sur le site)
+4. Nommée `agenda-confirm` → collez [`agenda-confirm.ts`](agenda-confirm.ts) → **Deploy**
+   (valide une réservation, génère les liens de paiement + caution Stripe, envoie l'e-mail de confirmation)
 
 ## 5. Ajouter les secrets (Edge Functions → Manage secrets)
 - `RESEND_API_KEY` = votre clé Resend
 - `SFMATCH_INTERNAL_EMAIL` = `contact@sfclub-paris.com`
 - `SFMATCH_FROM` = `SF Club Paris <contact@sfclub-paris.com>`
+- `STRIPE_SECRET_KEY` = votre clé secrète Stripe (Dashboard Stripe → Developers → API keys → "Secret key",
+  commence par `sk_live_...` en production ou `sk_test_...` pour tester sans vrai paiement)
 
 (`SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont fournis automatiquement, rien à faire.)
 

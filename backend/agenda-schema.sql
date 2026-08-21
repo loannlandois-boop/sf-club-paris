@@ -27,6 +27,7 @@ create table if not exists public.agenda_vehicules (
   prix_jour_4_6 numeric,
   prix_jour_7_13 numeric,
   prix_jour_14plus numeric,
+  caution numeric,
   actif boolean default true,
   created_at timestamptz default now()
 );
@@ -42,6 +43,8 @@ create table if not exists public.agenda_reservations (
   client_nom text,
   client_contact text,
   prix_total numeric,
+  lien_paiement text,
+  lien_caution text,
   statut text default 'confirmee',
   source text default 'site',
   notes text,

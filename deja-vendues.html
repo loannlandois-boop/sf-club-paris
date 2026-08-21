@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Déjà vendues — SF CLUB PARIS</title>
+  <meta name="description" content="Les dernières ventes réalisées par SF Club Paris : véhicules cédés en toute confidentialité à des acheteurs du Club via SF Match.">
+  <meta property="og:title" content="Déjà vendues — SF CLUB PARIS">
+  <meta property="og:description" content="Nos dernières ventes, réalisées en toute confidentialité auprès des membres du Club.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .car--vendu { position: relative; opacity: .94; }
+    .car__vendu-tag {
+      position: absolute; top: 22px; right: 22px;
+      font-size: .62rem; letter-spacing: .16em; text-transform: uppercase;
+      color: #0A0A0A; background: var(--gold); padding: .4em 0.9em;
+    }
+    .car__vendu-note { font-size: .82rem; color: var(--text-muted); margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav>
+        <ul class="nav__menu">
+          <li><a href="location.html">Location</a></li>
+          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="financement.html">Financement</a></li>
+          <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav__actions"><a href="location.html" class="btn btn--solid nav__cta">Réserver</a><a href="club.html" class="btn btn--solid nav__cta nav__cta--club">Club</a></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero hero--compact">
+      <div class="container hero__inner">
+        <span class="eyebrow reveal">Achat &amp; Revente</span>
+        <h1 class="reveal" data-delay="1">Déjà vendues</h1>
+        <p class="hero__sub reveal" data-delay="2">Chaque véhicule ci-dessous a trouvé son acheteur en toute confidentialité, mis en relation par SF Match — sans annonce publique.</p>
+        <div class="btn-row reveal" data-delay="3">
+          <a href="sf-match.html#outil" class="btn btn--solid btn--lg">Vendre le mien</a>
+          <a href="sf-match.html#outil" class="btn btn--lg">Je recherche ce type de véhicule</a>
+        </div>
+      </div>
+    </section>
+    <hr class="gold-line">
+
+    <section class="section">
+      <div class="container">
+        <div class="grid grid--3" id="ventesGrid">
+
+          <!-- Chaque vente confirmée est ajoutée ici sous cette forme :
+          <article class="car car--vendu reveal">
+            <span class="car__vendu-tag">Vendu</span>
+            <span class="car__cat">Segment</span>
+            <h3>Marque Modèle</h3>
+            <ul class="car__specs">
+              <li>Année</li>
+              <li>Vendu via SF Match</li>
+            </ul>
+            <p class="car__vendu-note">Cédé à un membre du Club en [délai].</p>
+          </article>
+          -->
+
+        </div>
+        <p class="muted center" id="ventesVide" style="padding:2rem 0">Les prochaines ventes réalisées via SF Match apparaîtront ici.</p>
+      </div>
+    </section>
+    <hr class="gold-line">
+
+    <section class="section cta-band">
+      <div class="container center" style="max-width:760px">
+        <hr class="gold-line--short">
+        <h2 class="reveal">Vous avez un véhicule à céder ?</h2>
+        <p class="muted reveal" data-delay="1">Dépôt confidentiel, mise en relation immédiate avec les acheteurs du Club dont la recherche correspond.</p>
+        <div class="btn-row reveal" data-delay="2" style="justify-content:center">
+          <a href="sf-match.html#outil" class="btn btn--solid btn--lg">Déposer mon véhicule</a>
+          <a href="achat-revente.html" class="btn btn--lg">Retour à Achat &amp; Revente</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+          <p>Club automobile privé. L'héritage en mouvement — Paris · Côte d'Azur · Monaco.</p>
+        </div>
+        <div class="footer__col">
+          <h4>Le Club</h4>
+          <ul>
+            <li><a href="location.html">Location</a></li>
+            <li><a href="evenements.html">Événements</a></li>
+            <li><a href="financement.html">Financement</a></li>
+            <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Espace</h4>
+          <ul>
+            <li><a href="luxe.html">La Collection</a></li>
+            <li><a href="sf-match.html">SF Match</a></li>
+            <li><a href="deja-vendues.html">Déjà vendues</a></li>
+            <li><a href="club.html">Le Club</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Destinations</h4>
+          <ul>
+            <li><a href="luxe.html">Paris</a></li>
+            <li><a href="luxe.html">Côte d'Azur</a></li>
+            <li><a href="luxe.html">Monaco</a></li>
+            <li><a href="luxe.html">Courchevel</a></li>
+          </ul>
+        </div>
+        <div class="footer__col">
+          <h4>Contact</h4>
+          <ul>
+            <li><a href="tel:0493080280">04 93 08 02 80</a></li>
+            <li><a href="mailto:contact@sfclub-paris.com">contact@sfclub-paris.com</a></li>
+            <li><a href="contact.html">Nos adresses</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer__bottom">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+        <div class="footer__legal">
+          <a href="#">Mentions légales</a>
+          <a href="#">RGPD</a>
+          <a href="#">Cookies</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

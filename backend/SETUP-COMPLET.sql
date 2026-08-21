@@ -62,6 +62,7 @@ create table if not exists public.agenda_vehicules (
   agence_nom text, marque text not null, modele text not null,
   annee int, couleur text, segment text, image text,
   prix_jour_1_3 numeric, prix_jour_4_6 numeric, prix_jour_7_13 numeric, prix_jour_14plus numeric,
+  caution numeric,
   actif boolean default true, created_at timestamptz default now()
 );
 
@@ -71,6 +72,7 @@ create table if not exists public.agenda_reservations (
   date_debut date not null, date_fin date not null,
   heure_debut text, heure_fin text, adresse_livraison text,
   client_nom text, client_contact text, prix_total numeric,
+  lien_paiement text, lien_caution text,
   statut text default 'confirmee', source text default 'site', notes text,
   created_at timestamptz default now()
 );

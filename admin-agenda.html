@@ -292,15 +292,18 @@
       var adresse = document.getElementById('ck-adresse').value.trim();
       authFetch('/rest/v1/agenda_reservations', {
         method: 'POST',
-        headers: { Prefer: 'return=minimal' },
+        headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
           vehicule_id: vehiculeId, date_debut: debut, date_fin: fin,
           heure_debut: heureDebut, heure_fin: heureFin, adresse_livraison: adresse,
           client_nom: nom, client_contact: contact, prix_total: prixTotal,
-          statut: 'confirmee', source: 'telephone'
+          statut: 'en_attente', source: 'telephone'
         })
-      }).then(function (r) {
-        if (r && r.ok) { formCheck.reset(); document.getElementById('ckResult').classList.remove('is-visible'); loadPending(); loadReservations(); }
+      }).then(function (r) { return r && r.ok ? r.json() : null; }).then(function (rows) {
+        if (rows && rows[0]) {
+          formCheck.reset(); document.getElementById('ckResult').classList.remove('is-visible');
+          return validerReservation(rows[0].id);
+        }
       }).catch(function () {});
     }
 
@@ -308,6 +311,18 @@
       return authFetch('/rest/v1/agenda_reservations?id=eq.' + id, {
         method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ statut: statut })
       }).then(function () { loadPending(); loadReservations(); });
+    }
+
+    // ---- Valider = bloque le vehicule + genere les liens Stripe (paiement + caution) + envoie l'e-mail ----
+    function validerReservation(id, btn) {
+      if (btn) { btn.disabled = true; btn.textContent = 'Validation…'; }
+      return authFetch('/functions/v1/agenda-confirm', {
+        method: 'POST', body: JSON.stringify({ id: id })
+      }).then(function (r) { return r ? r.json() : null; }).then(function () {
+        loadPending(); loadReservations();
+      }).catch(function () {
+        if (btn) { btn.disabled = false; btn.textContent = 'Valider'; }
+      });
     }
 
     function rowHTML(r, v) {
@@ -335,7 +350,7 @@
             box.appendChild(row);
           });
           box.querySelectorAll('[data-valider]').forEach(function (btn) {
-            btn.addEventListener('click', function () { setStatut(btn.dataset.valider, 'confirmee'); });
+            btn.addEventListener('click', function () { validerReservation(btn.dataset.valider, btn); });
           });
           box.querySelectorAll('[data-refuser]').forEach(function (btn) {
             btn.addEventListener('click', function () { setStatut(btn.dataset.refuser, 'annulee'); });
@@ -357,6 +372,11 @@
             var row = document.createElement('div');
             row.className = 'agenda-row';
             row.innerHTML = rowHTML(r, v) +
+              (r.lien_paiement || r.lien_caution ?
+                '<div class="agenda-row__main">' +
+                (r.lien_paiement ? '<span><a href="' + r.lien_paiement + '" target="_blank" rel="noopener" class="gold">Lien paiement</a></span>' : '') +
+                (r.lien_caution ? '<span><a href="' + r.lien_caution + '" target="_blank" rel="noopener" class="gold">Lien caution</a></span>' : '') +
+                '</div>' : '') +
               '<div class="agenda-row__actions"><span class="agenda-status agenda-status--' + r.statut + '">' + r.statut + '</span>' +
               '<span>' + fmtPrix(r.prix_total) + '</span>' +
               '<button type="button" class="agenda-link" data-id="' + r.id + '">Annuler</button></div>';

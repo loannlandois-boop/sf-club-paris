@@ -248,6 +248,25 @@
     var form = document.getElementById('formDispo');
     if (!form) return;
 
+    // Pré-remplissage depuis la Collection (?voiture=Marque+Modèle#dispo)
+    (function () {
+      var voiture = new URLSearchParams(location.search).get('voiture');
+      if (!voiture) return;
+      var MULTI_MOT = ['Aston Martin', 'Land Rover', 'Range Rover', 'Rolls Royce', 'Rolls-Royce', 'Alfa Romeo', 'Mercedes-AMG', 'Mercedes-Benz'];
+      var marque = voiture, modele = '';
+      var prefixe = MULTI_MOT.find(function (p) { return voiture.toLowerCase().indexOf(p.toLowerCase()) === 0; });
+      if (prefixe) {
+        marque = prefixe;
+        modele = voiture.slice(prefixe.length).trim();
+      } else {
+        var parts = voiture.split(' ');
+        marque = parts.shift();
+        modele = parts.join(' ');
+      }
+      document.getElementById('d-marque').value = marque;
+      document.getElementById('d-modele').value = modele;
+    })();
+
     function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : 'sur devis'; }
     function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 

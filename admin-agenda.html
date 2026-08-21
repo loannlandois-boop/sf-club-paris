@@ -87,6 +87,11 @@
           </div>
           <div class="field" style="margin-top:20px"><label for="ck-adresse">Adresse de livraison</label><input type="text" id="ck-adresse" placeholder="Adresse, ville, ou aéroport/hôtel"></div>
           <div class="form-grid" style="margin-top:20px">
+            <div class="field"><label for="ck-vol">Numéro de vol</label><input type="text" id="ck-vol" placeholder="Ex. AF1234"></div>
+            <div class="field"><label for="ck-vol-arrivee">Heure d'arrivée du vol</label><input type="time" id="ck-vol-arrivee"></div>
+            <div class="field"><label for="ck-vol-depart">Heure de départ du vol retour</label><input type="time" id="ck-vol-depart"></div>
+          </div>
+          <div class="form-grid" style="margin-top:20px">
             <div class="field"><label for="ck-nom">Nom du client</label><input type="text" id="ck-nom"></div>
             <div class="field"><label for="ck-contact">Email / téléphone client</label><input type="text" id="ck-contact"></div>
           </div>
@@ -290,12 +295,16 @@
       var heureDebut = document.getElementById('ck-heure-debut').value;
       var heureFin = document.getElementById('ck-heure-fin').value;
       var adresse = document.getElementById('ck-adresse').value.trim();
+      var vol = document.getElementById('ck-vol').value.trim();
+      var volArrivee = document.getElementById('ck-vol-arrivee').value;
+      var volDepart = document.getElementById('ck-vol-depart').value;
       authFetch('/rest/v1/agenda_reservations', {
         method: 'POST',
         headers: { Prefer: 'return=representation' },
         body: JSON.stringify({
           vehicule_id: vehiculeId, date_debut: debut, date_fin: fin,
           heure_debut: heureDebut, heure_fin: heureFin, adresse_livraison: adresse,
+          numero_vol: vol, heure_arrivee_vol: volArrivee, heure_depart_vol: volDepart,
           client_nom: nom, client_contact: contact, prix_total: prixTotal,
           statut: 'en_attente', source: 'telephone'
         })
@@ -326,9 +335,12 @@
     }
 
     function rowHTML(r, v) {
-      return '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
+      return '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + (r.reference ? ' · ' + r.reference : '') + '</b>' +
         '<span>' + r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '') + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span>' +
-        (r.adresse_livraison ? '<span>Livraison : ' + r.adresse_livraison + '</span>' : '') + '</div>';
+        (r.adresse_livraison ? '<span>Livraison : ' + r.adresse_livraison + '</span>' : '') +
+        (r.numero_vol ? '<span>Vol ' + r.numero_vol + (r.heure_arrivee_vol ? ' · arrivée ' + r.heure_arrivee_vol : '') + (r.heure_depart_vol ? ' · départ ' + r.heure_depart_vol : '') + '</span>' : '') +
+        (r.paye !== undefined ? '<span>Paiement : ' + (r.paye ? 'reçu ✓' : 'en attente') + '</span>' : '') +
+        '</div>';
     }
 
     // ---- Demandes en attente (venant du site public) ----

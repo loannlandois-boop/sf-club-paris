@@ -42,6 +42,43 @@ n'importe quel CVC → le paiement passe sans débiter personne.
 
 Une fois convaincu, repassez en clé `sk_live_...` pour les vrais paiements.
 
+## 7. Ajouter les colonnes de suivi (numéro de réservation, paiement, vol)
+SQL Editor → collez [`migration-suivi.sql`](migration-suivi.sql) → **Run**.
+
+## 8. Déployer le webhook (indispensable pour l'e-mail de remerciement)
+Le lien de paiement seul ne suffit pas à savoir si le client a vraiment payé — il faut que
+Stripe **prévienne** votre site quand l'argent est réellement encaissé. C'est le rôle du
+webhook :
+
+1. Edge Functions → **Create a function** nommée `stripe-webhook`
+2. Collez le contenu de [`stripe-webhook.ts`](stripe-webhook.ts) → **Deploy**
+3. **Important** : sur cette fonction précisément, désactivez la vérification JWT (case à
+   décocher du type "Enforce JWT Verification" au moment de la création, ou dans les
+   **Settings** de la fonction une fois créée). Stripe n'envoie pas de jeton Supabase — sans
+   ça, tous ses appels seraient refusés avant même d'arriver à votre code. La sécurité est
+   assurée autrement (vérification de signature Stripe, voir étape suivante).
+4. Copiez l'URL de la fonction (visible en haut de sa page, du type
+   `https://VOTRE_PROJET.supabase.co/functions/v1/stripe-webhook`)
+5. Dashboard Stripe → **Developers → Webhooks → Add endpoint** → collez cette URL →
+   sélectionnez l'événement **`checkout.session.completed`** → **Add endpoint**
+6. Sur la page de ce webhook, cliquez **Reveal** à côté de "Signing secret" (commence par
+   `whsec_...`) → copiez-le
+7. Supabase → **Edge Functions → Secrets** → ajoutez `STRIPE_WEBHOOK_SECRET` = cette valeur
+
+## 9. Déployer la fonction de suivi client
+1. `agenda-lookup` ← [`agenda-lookup.ts`](agenda-lookup.ts) → **Deploy**
+   (permet au client de retrouver sa réservation avec son numéro + son contact — page
+   [ma-reservation.html](../ma-reservation.html))
+
+## 10. Tester le circuit complet
+1. Validez une réservation → l'e-mail de confirmation arrive avec le numéro de réservation
+   (`SF-2026-000XX`) et les liens
+2. Payez avec la carte de test `4242 4242 4242 4242`
+3. Quelques secondes après, un **second e-mail** de remerciement doit arriver (déclenché par
+   le webhook, pas par le clic sur le lien)
+4. Allez sur `ma-reservation.html`, entrez le numéro + l'email/téléphone du client → la
+   réservation doit s'afficher avec "Paiement : reçu ✓"
+
 ## Notes
 - Sans clé Stripe configurée, la validation fonctionne quand même (le véhicule se bloque,
   l'e-mail part), simplement sans lien de paiement — le client est informé qu'un conseiller

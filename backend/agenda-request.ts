@@ -44,6 +44,9 @@ Deno.serve(async (req) => {
     const date_debut = b.date_debut, date_fin = b.date_fin;
     const heure_debut = b.heure_debut ?? null, heure_fin = b.heure_fin ?? null;
     const adresse_livraison = b.adresse_livraison ?? null;
+    const numero_vol = b.numero_vol || null;
+    const heure_arrivee_vol = b.heure_arrivee_vol || null;
+    const heure_depart_vol = b.heure_depart_vol || null;
     const prix_total = b.prix_total ?? null;
     const nom = b.nom ?? "", contact = b.contact ?? "";
 
@@ -53,6 +56,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await sb.from("agenda_reservations").insert({
       vehicule_id, date_debut, date_fin, heure_debut, heure_fin, adresse_livraison,
+      numero_vol, heure_arrivee_vol, heure_depart_vol,
       client_nom: nom, client_contact: contact, prix_total,
       statut: "en_attente", source: "site",
     }).select("id").maybeSingle();
@@ -68,6 +72,7 @@ Deno.serve(async (req) => {
        <p><b>${libelleVehicule}</b>${agence_nom ? ` (${agence_nom})` : ""}</p>
        <p>Du ${date_debut}${heure_debut ? " " + heure_debut : ""} au ${date_fin}${heure_fin ? " " + heure_fin : ""}</p>
        <p>Livraison : ${adresse_livraison || "non précisée"}</p>
+       ${numero_vol ? `<p>Vol ${numero_vol}${heure_arrivee_vol ? " — arrivée " + heure_arrivee_vol : ""}${heure_depart_vol ? ", départ " + heure_depart_vol : ""}</p>` : ""}
        <p>Prix estimé : ${prix_total ? prix_total + " €" : "sur devis"}</p>
        <p>Client : ${nom} — ${contact}</p>
        <p>Connectez-vous à l'agenda pour valider ou refuser cette demande.</p>`,

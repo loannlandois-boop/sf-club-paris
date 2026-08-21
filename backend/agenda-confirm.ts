@@ -51,29 +51,35 @@ async function stripeSession(params: Record<string, string>) {
   return d.url as string;
 }
 
-function lienPaiement(nomProduit: string, montant: number, email?: string) {
+function lienPaiement(nomProduit: string, montant: number, reservationId: number, email?: string) {
   const p: Record<string, string> = {
     mode: "payment",
+    client_reference_id: String(reservationId),
+    "metadata[reservation_id]": String(reservationId),
+    "metadata[type]": "paiement",
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]": nomProduit,
     "line_items[0][price_data][unit_amount]": String(Math.round(montant * 100)),
     "line_items[0][quantity]": "1",
-    success_url: `${SITE_URL}/index.html?paiement=ok`,
+    success_url: `${SITE_URL}/ma-reservation.html?paiement=ok`,
     cancel_url: `${SITE_URL}/index.html`,
   };
   if (email && email.includes("@")) p["customer_email"] = email;
   return stripeSession(p);
 }
 
-function lienCaution(nomProduit: string, montant: number, email?: string) {
+function lienCaution(nomProduit: string, montant: number, reservationId: number, email?: string) {
   const p: Record<string, string> = {
     mode: "payment",
+    client_reference_id: String(reservationId),
+    "metadata[reservation_id]": String(reservationId),
+    "metadata[type]": "caution",
     "payment_intent_data[capture_method]": "manual",
     "line_items[0][price_data][currency]": "eur",
     "line_items[0][price_data][product_data][name]": nomProduit,
     "line_items[0][price_data][unit_amount]": String(Math.round(montant * 100)),
     "line_items[0][quantity]": "1",
-    success_url: `${SITE_URL}/index.html?caution=ok`,
+    success_url: `${SITE_URL}/ma-reservation.html?caution=ok`,
     cancel_url: `${SITE_URL}/index.html`,
   };
   if (email && email.includes("@")) p["customer_email"] = email;
@@ -105,22 +111,30 @@ Deno.serve(async (req) => {
     const v = r.agenda_vehicules || {};
     const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
     const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
+    const reference = r.reference || `SF-${new Date().getFullYear()}-${String(id).padStart(5, "0")}`;
 
     let lienPay: string | null = null;
     let lienDep: string | null = null;
     if (r.prix_total) {
-      lienPay = await lienPaiement(`Location ${libelle} — ${r.date_debut} au ${r.date_fin}`, r.prix_total, clientEmail);
+      lienPay = await lienPaiement(`Location ${libelle} — ${r.date_debut} au ${r.date_fin}`, r.prix_total, id, clientEmail);
     }
     if (v.caution) {
-      lienDep = await lienCaution(`Caution (préautorisation, non débitée) — ${libelle}`, v.caution, clientEmail);
+      lienDep = await lienCaution(`Caution (préautorisation, non débitée) — ${libelle}`, v.caution, id, clientEmail);
     }
 
-    await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienDep }).eq("id", id);
+    await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienDep, reference }).eq("id", id);
+
+    const vol = r.numero_vol
+      ? `<p>Vol ${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}.</p>`
+      : "";
 
     const html = `
       <p>Bonjour ${r.client_nom ?? ""},</p>
       <p>Votre réservation est <b>confirmée</b> : <b>${libelle}</b> du ${r.date_debut}${r.heure_debut ? " " + r.heure_debut : ""}
       au ${r.date_fin}${r.heure_fin ? " " + r.heure_fin : ""}${r.adresse_livraison ? `, livraison à ${r.adresse_livraison}` : ""}.</p>
+      ${vol}
+      <p>Votre numéro de réservation : <b>${reference}</b> — conservez-le, il vous permettra de retrouver votre
+      réservation sur <a href="${SITE_URL}/ma-reservation.html">${SITE_URL}/ma-reservation.html</a>.</p>
       <p>Pour finaliser, merci de nous transmettre par retour de ce mail :</p>
       <ul>
         <li>Une copie de votre permis de conduire</li>
@@ -132,15 +146,16 @@ Deno.serve(async (req) => {
       ${lienDep ? `<p><a href="${lienDep}">Préautoriser la caution (${v.caution} €, non débitée sauf dommages)</a></p>` : ``}
       <p>— SF Club Paris</p>`;
 
-    if (clientEmail) await email(clientEmail, `Réservation confirmée — ${libelle}`, html);
+    if (clientEmail) await email(clientEmail, `Réservation confirmée — ${reference}`, html);
     await email(
       INTERNAL,
-      `Réservation validée — ${libelle}`,
-      `<p>Réservation #${id} validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
+      `Réservation validée — ${reference}`,
+      `<p>Réservation ${reference} validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
+       ${vol}
        <p>Lien paiement : ${lienPay || "non généré"}</p><p>Lien caution : ${lienDep || "non généré"}</p>`,
     );
 
-    return new Response(JSON.stringify({ ok: true, lien_paiement: lienPay, lien_caution: lienDep }), { headers: CORS });
+    return new Response(JSON.stringify({ ok: true, reference, lien_paiement: lienPay, lien_caution: lienDep }), { headers: CORS });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS });
   }

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ma réservation — SF CLUB PARIS</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav>
+        <ul class="nav__menu">
+          <li><a href="location.html">Location</a></li>
+          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="financement.html">Financement</a></li>
+          <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav__actions"><a href="location.html" class="btn btn--solid nav__cta">Réserver</a><a href="club.html" class="btn btn--solid nav__cta nav__cta--club">Club</a></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <section class="hero hero--compact">
+      <div class="container hero__inner">
+        <span class="eyebrow reveal">Suivi</span>
+        <h1 class="reveal" data-delay="1">Ma réservation</h1>
+        <p class="hero__sub reveal" data-delay="2">Retrouvez le détail de votre réservation avec le numéro reçu par e-mail.</p>
+      </div>
+    </section>
+    <hr class="gold-line">
+
+    <section class="section" style="padding-top:0">
+      <div class="container" style="max-width:560px">
+        <form class="form-card" id="formLookup">
+          <div class="field"><label for="lk-ref">Numéro de réservation</label><input type="text" id="lk-ref" placeholder="SF-2026-00001" required></div>
+          <div class="field"><label for="lk-contact">Email ou téléphone utilisé pour la réservation</label><input type="text" id="lk-contact" required></div>
+          <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Retrouver ma réservation</button>
+          <p class="muted" id="lkError" style="color:#d66;font-size:.85rem;display:none;margin-top:1rem">Aucune réservation trouvée avec ces informations.</p>
+        </form>
+
+        <div class="match" id="lkResult">
+          <div class="match__count" id="lkTitle"></div>
+          <ul class="match__list" id="lkList"></ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom" style="border-top:0;justify-content:center">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+    var form = document.getElementById('formLookup');
+
+    function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : 'sur devis'; }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var ref = document.getElementById('lk-ref').value.trim();
+      var contact = document.getElementById('lk-contact').value.trim();
+      var err = document.getElementById('lkError');
+      var box = document.getElementById('lkResult');
+      err.style.display = 'none';
+      box.classList.remove('is-visible');
+
+      fetch(SB_URL + '/functions/v1/agenda-lookup', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref, contact: contact })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (!res.found) { err.style.display = ''; return; }
+        var r = res.reservation;
+        var v = r.agenda_vehicules || {};
+        document.getElementById('lkTitle').textContent = (v.marque || '') + ' ' + (v.modele || '');
+        var list = document.getElementById('lkList');
+        list.innerHTML = '';
+        var rows = [
+          ['Référence', r.reference],
+          ['Dates', r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '')],
+          ['Agence', v.agence_nom || '—'],
+          ['Livraison', r.adresse_livraison || '—'],
+          ['Vol', r.numero_vol ? r.numero_vol + (r.heure_arrivee_vol ? ' · arrivée ' + r.heure_arrivee_vol : '') + (r.heure_depart_vol ? ' · départ ' + r.heure_depart_vol : '') : '—'],
+          ['Montant', fmtPrix(r.prix_total)],
+          ['Paiement', r.paye ? 'Reçu ✓' : 'En attente'],
+          ['Caution', r.caution_recue ? 'Préautorisée ✓' : 'En attente']
+        ];
+        rows.forEach(function (row) {
+          var li = document.createElement('li');
+          li.innerHTML = '<span>' + row[0] + '</span><span><b>' + row[1] + '</b></span>';
+          list.appendChild(li);
+        });
+        box.classList.add('is-visible');
+      }).catch(function () { err.style.display = ''; });
+    });
+  })();
+  </script>
+</body>
+</html>

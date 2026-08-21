@@ -94,6 +94,11 @@
           </div>
           <div class="field" style="margin-top:20px"><label for="d-adresse">Adresse de livraison</label><input type="text" id="d-adresse" placeholder="Adresse, ville, ou aéroport/hôtel" required></div>
           <div class="form-grid" style="margin-top:20px">
+            <div class="field"><label for="d-vol">Numéro de vol (si arrivée en avion)</label><input type="text" id="d-vol" placeholder="Ex. AF1234"></div>
+            <div class="field"><label for="d-vol-arrivee">Heure d'arrivée du vol</label><input type="time" id="d-vol-arrivee"></div>
+            <div class="field"><label for="d-vol-depart">Heure de départ du vol retour</label><input type="time" id="d-vol-depart"></div>
+          </div>
+          <div class="form-grid" style="margin-top:20px">
             <div class="field"><label for="d-nom">Votre nom</label><input type="text" id="d-nom" required></div>
             <div class="field"><label for="d-contact">Email ou téléphone</label><input type="text" id="d-contact" required></div>
           </div>
@@ -277,6 +282,7 @@
         date_debut: debut, date_fin: fin,
         heure_debut: val('d-heure-debut'), heure_fin: val('d-heure-fin'),
         adresse_livraison: val('d-adresse'),
+        numero_vol: val('d-vol'), heure_arrivee_vol: val('d-vol-arrivee'), heure_depart_vol: val('d-vol-depart'),
         prix_total: prixTotal,
         nom: val('d-nom'), contact: val('d-contact')
       };

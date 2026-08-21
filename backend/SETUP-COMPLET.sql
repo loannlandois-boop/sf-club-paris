@@ -69,6 +69,7 @@ create table if not exists public.agenda_reservations (
   id bigint generated always as identity primary key,
   vehicule_id bigint references public.agenda_vehicules(id) on delete cascade,
   date_debut date not null, date_fin date not null,
+  heure_debut text, heure_fin text, adresse_livraison text,
   client_nom text, client_contact text, prix_total numeric,
   statut text default 'confirmee', source text default 'site', notes text,
   created_at timestamptz default now()

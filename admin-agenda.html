@@ -80,7 +80,10 @@
             </div>
             <div class="field"><label for="ck-debut">Date début</label><input type="date" id="ck-debut" required></div>
             <div class="field"><label for="ck-fin">Date fin</label><input type="date" id="ck-fin" required></div>
+            <div class="field"><label for="ck-heure-debut">Heure de prise en charge</label><input type="time" id="ck-heure-debut"></div>
+            <div class="field"><label for="ck-heure-fin">Heure de retour</label><input type="time" id="ck-heure-fin"></div>
           </div>
+          <div class="field" style="margin-top:20px"><label for="ck-adresse">Adresse de livraison</label><input type="text" id="ck-adresse" placeholder="Adresse, ville, ou aéroport/hôtel"></div>
           <div class="form-grid" style="margin-top:20px">
             <div class="field"><label for="ck-nom">Nom du client</label><input type="text" id="ck-nom"></div>
             <div class="field"><label for="ck-contact">Email / téléphone client</label><input type="text" id="ck-contact"></div>
@@ -272,11 +275,15 @@
     function confirmerReservation(vehiculeId, debut, fin, prixTotal) {
       var nom = document.getElementById('ck-nom').value.trim();
       var contact = document.getElementById('ck-contact').value.trim();
+      var heureDebut = document.getElementById('ck-heure-debut').value;
+      var heureFin = document.getElementById('ck-heure-fin').value;
+      var adresse = document.getElementById('ck-adresse').value.trim();
       authFetch('/rest/v1/agenda_reservations', {
         method: 'POST',
         headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({
           vehicule_id: vehiculeId, date_debut: debut, date_fin: fin,
+          heure_debut: heureDebut, heure_fin: heureFin, adresse_livraison: adresse,
           client_nom: nom, client_contact: contact, prix_total: prixTotal,
           statut: 'confirmee', source: 'telephone'
         })
@@ -300,7 +307,8 @@
             row.className = 'agenda-row';
             row.innerHTML =
               '<div class="agenda-row__main"><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
-              '<span>' + r.date_debut + ' → ' + r.date_fin + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span></div>' +
+              '<span>' + r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '') + ' · ' + (v.agence_nom || '—') + ' · ' + (r.client_nom || 'Client ?') + ' (' + (r.client_contact || '—') + ')</span>' +
+              (r.adresse_livraison ? '<span>Livraison : ' + r.adresse_livraison + '</span>' : '') + '</div>' +
               '<div class="agenda-row__actions"><span class="agenda-status agenda-status--' + r.statut + '">' + r.statut + '</span>' +
               '<span>' + fmtPrix(r.prix_total) + '</span>' +
               (r.statut !== 'annulee' ? '<button type="button" class="agenda-link" data-id="' + r.id + '">Annuler</button>' : '') +

@@ -89,7 +89,10 @@
             <div class="field"><label for="d-modele">Modèle (optionnel)</label><input type="text" id="d-modele" placeholder="296 GTB, 911 Turbo S…"></div>
             <div class="field"><label for="d-debut">Date début</label><input type="date" id="d-debut" required></div>
             <div class="field"><label for="d-fin">Date fin</label><input type="date" id="d-fin" required></div>
+            <div class="field"><label for="d-heure-debut">Heure de prise en charge</label><input type="time" id="d-heure-debut" required></div>
+            <div class="field"><label for="d-heure-fin">Heure de retour</label><input type="time" id="d-heure-fin" required></div>
           </div>
+          <div class="field" style="margin-top:20px"><label for="d-adresse">Adresse de livraison</label><input type="text" id="d-adresse" placeholder="Adresse, ville, ou aéroport/hôtel" required></div>
           <div class="form-grid" style="margin-top:20px">
             <div class="field"><label for="d-nom">Votre nom</label><input type="text" id="d-nom" required></div>
             <div class="field"><label for="d-contact">Email ou téléphone</label><input type="text" id="d-contact" required></div>
@@ -254,6 +257,8 @@
         _subject: 'Demande de réservation — ' + vehicule.marque + ' ' + vehicule.modele,
         vehicule: vehicule.marque + ' ' + vehicule.modele + ' (' + (vehicule.agence_nom || 'agence à confirmer') + ')',
         dates: debut + ' → ' + fin,
+        horaires: val('d-heure-debut') + ' → ' + val('d-heure-fin'),
+        adresse_livraison: val('d-adresse'),
         prix_estime: fmtPrix(prixTotal),
         nom: val('d-nom'),
         contact: val('d-contact')

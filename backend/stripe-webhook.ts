@@ -1,23 +1,29 @@
 // ============================================================
 // SF AGENDA — Edge Function "stripe-webhook"
 // Reçoit les événements Stripe en direct (paiement réellement encaissé,
-// pas juste le clic sur le lien). Sur "checkout.session.completed" :
-//  - type "paiement" -> marque la réservation payée, envoie l'e-mail de
-//    remerciement avec le numéro de réservation
-//  - type "caution"  -> marque la caution comme préautorisée
+// pas juste le clic sur le lien). Sur "checkout.session.completed", type
+// "combine" (lien unique location + caution) :
+//  - si une caution est incluse (capture manuelle), capture immédiatement
+//    UNIQUEMENT la part location (l'argent arrive normalement), laissant la
+//    part caution simplement préautorisée sur la carte
+//  - marque la réservation payée, envoie l'e-mail de confirmation
+//    (paiement reçu + réservation confirmée) avec le numéro de réservation
+// (Conserve aussi les anciens types "paiement"/"caution" pour compatibilité
+// avec des liens déjà envoyés avant ce changement.)
 //
 // IMPORTANT : à déployer avec la vérification JWT DÉSACTIVÉE (Stripe
 // n'envoie pas de jeton Supabase). La sécurité est assurée par la
 // vérification de signature Stripe ci-dessous (STRIPE_WEBHOOK_SECRET).
 //
 // Secrets requis : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (auto),
-//                  STRIPE_WEBHOOK_SECRET, RESEND_API_KEY,
+//                  STRIPE_WEBHOOK_SECRET, STRIPE_SECRET_KEY, RESEND_API_KEY,
 //                  SFMATCH_INTERNAL_EMAIL, SFMATCH_FROM
 // ============================================================
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const WEBHOOK_SECRET = Deno.env.get("STRIPE_WEBHOOK_SECRET")!;
+const STRIPE_KEY = Deno.env.get("STRIPE_SECRET_KEY")!;
 const RESEND = Deno.env.get("RESEND_API_KEY")!;
 const INTERNAL = Deno.env.get("SFMATCH_INTERNAL_EMAIL") ?? "contact@sfclub-paris.com";
 const FROM = Deno.env.get("SFMATCH_FROM") ?? "SF Club Paris <onboarding@resend.dev>";
@@ -62,6 +68,17 @@ async function email(to: string, subject: string, bodyHtml: string) {
   });
 }
 
+async function capturerPartiel(paymentIntentId: string, montantCents: number) {
+  const r = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}/capture`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ amount_to_capture: String(montantCents) }),
+  });
+  const d = await r.json();
+  if (!r.ok) console.log("stripe capture error:", JSON.stringify(d));
+  return r.ok;
+}
+
 async function verifyStripeSignature(payload: string, sigHeader: string, secret: string): Promise<boolean> {
   const parts: Record<string, string> = {};
   for (const p of sigHeader.split(",")) {
@@ -91,23 +108,46 @@ Deno.serve(async (req) => {
       const resId = session.client_reference_id || session.metadata?.reservation_id;
       const type = session.metadata?.type;
 
-      if (resId && type === "paiement") {
+      if (resId && type === "combine") {
         const { data: r } = await sb
           .from("agenda_reservations")
           .select("*, agenda_vehicules(marque,modele)")
           .eq("id", resId)
           .maybeSingle();
         if (r && !r.paye) {
-          await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
+          const montantLocationCents = Number(session.metadata?.montant_location_cents || 0);
+          const montantCautionCents = Number(session.metadata?.montant_caution_cents || 0);
+          const manualCapture = session.metadata?.manual_capture === "1";
+
+          if (manualCapture && montantLocationCents > 0 && session.payment_intent) {
+            await capturerPartiel(session.payment_intent, montantLocationCents);
+          }
+
+          let facturePdf: string | null = null;
+          let factureUrl: string | null = null;
+          if (session.invoice) {
+            const inv = await fetch(`https://api.stripe.com/v1/invoices/${session.invoice}`, {
+              headers: { Authorization: `Bearer ${STRIPE_KEY}` },
+            }).then((x) => x.json()).catch(() => null);
+            facturePdf = inv?.invoice_pdf || null;
+            factureUrl = inv?.hosted_invoice_url || null;
+          }
+
+          await sb.from("agenda_reservations").update({
+            paye: true,
+            caution_recue: montantCautionCents > 0,
+          }).eq("id", resId);
+
           const v = r.agenda_vehicules || {};
           const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
           const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
           if (clientEmail) {
             await email(
               clientEmail,
-              `Merci ! Paiement reçu — ${r.reference || ""}`,
+              `Paiement reçu — Réservation confirmée — ${r.reference || ""}`,
               `<p>Bonjour ${r.client_nom ?? ""},</p>
-               <p>Nous vous remercions : votre paiement pour <b>${libelle}</b> a bien été reçu.</p>
+               <p>Nous vous confirmons la réception de votre paiement pour <b>${libelle}</b>. Votre réservation
+               est désormais <b>garantie et confirmée</b>.</p>
 
                <table role="presentation" style="margin:20px 0;">
                  <tr><td style="background:#0A0A0A;padding:14px 22px;text-align:center;">
@@ -116,13 +156,33 @@ Deno.serve(async (req) => {
                  </td></tr>
                </table>
 
-               <p style="font-size:13.5px;color:#666;">Conservez ce numéro : il vous permet de retrouver votre réservation
+               ${montantCautionCents > 0 ? `<p style="font-size:13.5px;color:#666;">La caution reste préautorisée sur votre carte, non débitée sauf dommages constatés.</p>` : ""}
+               ${facturePdf ? `<div style="margin:20px 0;"><a href="${facturePdf}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Télécharger ma facture (PDF)</a></div>` : ""}
+               ${factureUrl && !facturePdf ? `<p><a href="${factureUrl}">Consulter ma facture</a></p>` : ""}
+               <p style="font-size:13.5px;color:#666;">Conservez votre numéro de réservation : il vous permet de retrouver votre réservation
                à tout moment sur <a href="${SITE_URL}/ma-reservation.html" style="color:#0A0A0A;">ma-reservation.html</a>.</p>
                <p>Notre équipe se tient à votre disposition pour toute question avant votre départ.</p>
                <p>À très bientôt au volant.</p>`,
             );
           }
-          await email(INTERNAL, `Paiement reçu — ${r.reference || resId}`, `<p>Paiement encaissé pour <b>${r.client_nom ?? ""}</b> (${r.client_contact ?? ""}), réservation <b>${r.reference || resId}</b>.</p>`);
+          await email(
+            INTERNAL,
+            `Paiement reçu — ${r.reference || resId}`,
+            `<p>Paiement encaissé pour <b>${r.client_nom ?? ""}</b> (${r.client_contact ?? ""}), réservation <b>${r.reference || resId}</b>.</p>
+             <p>Location : ${(montantLocationCents / 100).toFixed(2)} € encaissée${montantCautionCents ? ` · Caution : ${(montantCautionCents / 100).toFixed(2)} € préautorisée` : ""}.</p>
+             ${facturePdf ? `<p>Facture : <a href="${facturePdf}">${facturePdf}</a></p>` : ""}`,
+          );
+        }
+      } else if (resId && type === "paiement") {
+        // Compatibilité avec d'anciens liens envoyés avant le passage au lien combiné.
+        const { data: r } = await sb.from("agenda_reservations").select("*, agenda_vehicules(marque,modele)").eq("id", resId).maybeSingle();
+        if (r && !r.paye) {
+          await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
+          const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
+          if (clientEmail) {
+            await email(clientEmail, `Paiement reçu — Réservation confirmée — ${r.reference || ""}`, `<p>Bonjour ${r.client_nom ?? ""},</p><p>Votre paiement a bien été reçu, votre réservation <b>${r.reference || ""}</b> est confirmée.</p>`);
+          }
+          await email(INTERNAL, `Paiement reçu — ${r.reference || resId}`, `<p>Paiement encaissé pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}), réservation ${r.reference || resId}.</p>`);
         }
       } else if (resId && type === "caution") {
         await sb.from("agenda_reservations").update({ caution_recue: true }).eq("id", resId);

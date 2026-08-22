@@ -79,12 +79,29 @@ webhook :
 4. Allez sur `ma-reservation.html`, entrez le numéro + l'email/téléphone du client → la
    réservation doit s'afficher avec "Paiement : reçu ✓"
 
+## 11. Remerciement automatique en fin de location
+Un e-mail de remerciement part automatiquement le jour du retour du véhicule (réservations
+payées uniquement), sans action de votre part.
+
+1. SQL Editor → collez [migration-merci.sql](migration-merci.sql) → **Run**
+2. Edge Functions → **Create a function** nommée `agenda-merci` → collez le contenu de
+   [agenda-merci.ts](agenda-merci.ts) → **Deploy**
+3. Ouvrez [cron-merci.sql](cron-merci.sql), remplacez `<PROJECT_REF>` et `<ANON_KEY>` (mêmes
+   valeurs que pour `trigger-notify.sql`) → collez le résultat dans SQL Editor → **Run**
+
+C'est tout : chaque jour à 10h (heure UTC), la tâche planifiée vérifie les locations qui se
+terminent et envoie le remerciement.
+
 ## Notes
+- **Un seul lien** couvre la location et la caution. Dès le paiement, le montant de la
+  location est encaissé automatiquement (capture immédiate) tandis que la caution reste
+  simplement préautorisée sur la carte — jamais débitée sauf dommages constatés.
+- Une **facture PDF** est générée automatiquement par Stripe et jointe (lien de
+  téléchargement) dans l'e-mail de confirmation envoyé après paiement.
 - Sans clé Stripe configurée, la validation fonctionne quand même (le véhicule se bloque,
   l'e-mail part), simplement sans lien de paiement — le client est informé qu'un conseiller
   le recontacte pour le règlement.
-- Les 2 liens générés sont aussi visibles dans l'agenda interne, sous chaque réservation
-  confirmée, si vous devez les renvoyer.
-- La capture (ou l'annulation) de la caution se fait manuellement dans le Dashboard Stripe →
-  **Payments** → repérez le paiement en statut "Uncaptured" → **Capture** (si dommages) ou
-  laissez expirer (se libère automatiquement, généralement sous 7 jours selon la banque).
+- La capture (si dommages) ou la libération de la part caution préautorisée se fait
+  manuellement dans le Dashboard Stripe → **Payments** → repérez le paiement partiellement
+  capturé → capturez le reliquat (dommages) ou laissez expirer (libération automatique,
+  généralement sous 7 jours selon la banque).

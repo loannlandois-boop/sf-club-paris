@@ -74,6 +74,7 @@ create table if not exists public.agenda_reservations (
   client_nom text, client_contact text, prix_total numeric,
   lien_paiement text, lien_caution text,
   reference text, paye boolean default false, caution_recue boolean default false,
+  merci_envoye boolean default false,
   numero_vol text, heure_arrivee_vol text, heure_depart_vol text,
   statut text default 'confirmee', source text default 'site', notes text,
   created_at timestamptz default now()

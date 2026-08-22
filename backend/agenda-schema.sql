@@ -48,6 +48,7 @@ create table if not exists public.agenda_reservations (
   reference text,
   paye boolean default false,
   caution_recue boolean default false,
+  merci_envoye boolean default false,
   numero_vol text,
   heure_arrivee_vol text,
   heure_depart_vol text,

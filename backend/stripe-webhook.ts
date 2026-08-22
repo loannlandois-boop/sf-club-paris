@@ -47,7 +47,7 @@ function emailShell(bodyHtml: string) {
               <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;color:#0A0A0A;">SF CLUB<span style="color:#999999;font-weight:400;">.PARIS</span></div>
               <div style="font-size:11px;color:#a3a3a3;letter-spacing:.5px;margin-top:3px;">L'h&eacute;ritage en mouvement</div>
               <div style="font-size:12.5px;color:#555555;margin-top:14px;line-height:1.7;">
-                04&nbsp;93&nbsp;08&nbsp;02&nbsp;80 &middot; <a href="mailto:contact@sfclub-paris.com" style="color:#555555;text-decoration:none;">contact@sfclub-paris.com</a><br>
+                07&nbsp;83&nbsp;21&nbsp;27&nbsp;49 &middot; <a href="mailto:contact@sfclub-paris.com" style="color:#555555;text-decoration:none;">contact@sfclub-paris.com</a><br>
                 Paris &middot; C&ocirc;te d'Azur &middot; Monaco
               </div>
             </td></tr>

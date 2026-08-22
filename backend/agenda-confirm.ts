@@ -31,12 +31,46 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-async function email(to: string, subject: string, html: string) {
+function emailShell(bodyHtml: string) {
+  return `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f2f2f0;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2f2f0;padding:32px 16px;">
+    <tr><td align="center">
+      <table role="presentation" width="100%" style="max-width:560px;background:#ffffff;border:1px solid #e6e6e3;">
+        <tr><td style="background:#0A0A0A;padding:30px 32px;text-align:center;">
+          <div style="font-size:21px;font-weight:800;letter-spacing:3px;color:#ffffff;">SF CLUB<span style="color:#999999;font-weight:400;">.PARIS</span></div>
+          <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:#999999;margin-top:7px;">Club Automobile Priv&eacute;</div>
+        </td></tr>
+        <tr><td style="padding:34px 32px 8px;color:#1a1a1a;font-size:15px;line-height:1.65;">
+          ${bodyHtml}
+        </td></tr>
+        <tr><td style="padding:26px 32px 32px;">
+          <table role="presentation" width="100%" style="border-top:1px solid #ececec;padding-top:22px;">
+            <tr><td>
+              <div style="font-size:13px;font-weight:700;letter-spacing:1.5px;color:#0A0A0A;">SF CLUB<span style="color:#999999;font-weight:400;">.PARIS</span></div>
+              <div style="font-size:11px;color:#a3a3a3;letter-spacing:.5px;margin-top:3px;">L'h&eacute;ritage en mouvement</div>
+              <div style="font-size:12.5px;color:#555555;margin-top:14px;line-height:1.7;">
+                04&nbsp;93&nbsp;08&nbsp;02&nbsp;80 &middot; <a href="mailto:contact@sfclub-paris.com" style="color:#555555;text-decoration:none;">contact@sfclub-paris.com</a><br>
+                Paris &middot; C&ocirc;te d'Azur &middot; Monaco
+              </div>
+            </td></tr>
+          </table>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+  </body></html>`;
+}
+
+function bouton(url: string, texte: string) {
+  return `<a href="${url}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;margin:6px 8px 6px 0;">${texte}</a>`;
+}
+
+async function email(to: string, subject: string, bodyHtml: string) {
   if (!to) return;
   await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${RESEND}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: FROM, to, subject, html }),
+    body: JSON.stringify({ from: FROM, to, subject, html: emailShell(bodyHtml) }),
   });
 }
 
@@ -125,34 +159,53 @@ Deno.serve(async (req) => {
     await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienDep, reference }).eq("id", id);
 
     const vol = r.numero_vol
-      ? `<p>Vol ${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}.</p>`
+      ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Vol</span><b>${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}</b></div>`
       : "";
 
     const html = `
       <p>Bonjour ${r.client_nom ?? ""},</p>
-      <p>Votre réservation est <b>confirmée</b> : <b>${libelle}</b> du ${r.date_debut}${r.heure_debut ? " " + r.heure_debut : ""}
-      au ${r.date_fin}${r.heure_fin ? " " + r.heure_fin : ""}${r.adresse_livraison ? `, livraison à ${r.adresse_livraison}` : ""}.</p>
-      ${vol}
-      <p>Votre numéro de réservation : <b>${reference}</b> — conservez-le, il vous permettra de retrouver votre
-      réservation sur <a href="${SITE_URL}/ma-reservation.html">${SITE_URL}/ma-reservation.html</a>.</p>
-      <p>Pour finaliser, merci de nous transmettre par retour de ce mail :</p>
-      <ul>
+      <p>Votre réservation est <b>confirmée</b>. Voici le récapitulatif :</p>
+
+      <table role="presentation" width="100%" style="background:#f7f7f5;border:1px solid #ececec;margin:18px 0;">
+        <tr><td style="padding:18px 20px;">
+          <div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Véhicule</span><b>${libelle}</b></div>
+          <div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Dates</span><b>${r.date_debut}${r.heure_debut ? " " + r.heure_debut : ""} → ${r.date_fin}${r.heure_fin ? " " + r.heure_fin : ""}</b></div>
+          ${r.adresse_livraison ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Livraison</span><b>${r.adresse_livraison}</b></div>` : ""}
+          ${vol}
+        </td></tr>
+      </table>
+
+      <table role="presentation" style="margin:0 0 22px;">
+        <tr><td style="background:#0A0A0A;padding:14px 22px;text-align:center;">
+          <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Num&eacute;ro de r&eacute;servation</div>
+          <div style="font-size:19px;font-weight:800;letter-spacing:1px;color:#ffffff;margin-top:4px;">${reference}</div>
+        </td></tr>
+      </table>
+      <p style="font-size:13.5px;color:#666;">Conservez ce numéro : il vous permet de retrouver votre réservation à tout moment sur
+      <a href="${SITE_URL}/ma-reservation.html" style="color:#0A0A0A;">ma-reservation.html</a>.</p>
+
+      <p>Pour finaliser, merci de nous transmettre <b>par retour de ce mail</b> :</p>
+      <ul style="padding-left:20px;color:#333;">
         <li>Une copie de votre permis de conduire</li>
         <li>Une copie de votre passeport ou carte d'identité</li>
       </ul>
-      <p>Aucune photo de carte bancaire n'est nécessaire : la caution est prélevée en préautorisation
-      de façon sécurisée directement via le lien ci-dessous.</p>
-      ${lienPay ? `<p><a href="${lienPay}">Payer le montant de la location (${r.prix_total} €)</a></p>` : `<p>Le montant à régler vous sera confirmé par un conseiller.</p>`}
-      ${lienDep ? `<p><a href="${lienDep}">Préautoriser la caution (${v.caution} €, non débitée sauf dommages)</a></p>` : ``}
-      <p>— SF Club Paris</p>`;
+      <p style="font-size:13.5px;color:#666;">Aucune photo de carte bancaire n'est nécessaire : la caution est prélevée en
+      préautorisation de façon sécurisée directement via le lien ci-dessous.</p>
+
+      <div style="margin-top:22px;">
+        ${lienPay ? bouton(lienPay, `Payer la location — ${r.prix_total} €`) : ""}
+        ${lienDep ? bouton(lienDep, `Préautoriser la caution — ${v.caution} €`) : ""}
+      </div>
+      ${!lienPay ? `<p style="font-size:13.5px;color:#666;">Le montant à régler vous sera confirmé par un conseiller.</p>` : ""}`;
 
     if (clientEmail) await email(clientEmail, `Réservation confirmée — ${reference}`, html);
     await email(
       INTERNAL,
       `Réservation validée — ${reference}`,
-      `<p>Réservation ${reference} validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
+      `<p>Réservation <b>${reference}</b> validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
        ${vol}
-       <p>Lien paiement : ${lienPay || "non généré"}</p><p>Lien caution : ${lienDep || "non généré"}</p>`,
+       <p style="margin-top:14px;">Lien paiement : ${lienPay ? `<a href="${lienPay}">${lienPay}</a>` : "non généré"}</p>
+       <p>Lien caution : ${lienDep ? `<a href="${lienDep}">${lienDep}</a>` : "non généré"}</p>`,
     );
 
     return new Response(JSON.stringify({ ok: true, reference, lien_paiement: lienPay, lien_caution: lienDep }), { headers: CORS });

@@ -91,7 +91,10 @@ Deno.serve(async (req) => {
       statut: "en_attente", source: "site",
     }).select("id").maybeSingle();
 
-    if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: CORS });
+    if (error) {
+      console.log("agenda-request insert error:", JSON.stringify(error));
+      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: CORS });
+    }
 
     const libelleVehicule = (marque + " " + modele).trim() || "véhicule à confirmer";
 
@@ -129,6 +132,7 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ ok: true, id: data?.id }), { headers: CORS });
   } catch (e) {
+    console.log("agenda-request error:", String(e), e instanceof Error ? e.stack : "");
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS });
   }
 });

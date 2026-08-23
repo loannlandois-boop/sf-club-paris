@@ -133,6 +133,10 @@
         <form class="form-card reveal" id="formEvenement">
           <div class="form-grid">
             <div class="field">
+              <label for="civilite">Civilité</label>
+              <select id="civilite"><option value="M.">Monsieur</option><option value="Mme">Madame</option></select>
+            </div>
+            <div class="field">
               <label for="nom">Nom complet</label>
               <input type="text" id="nom" required>
             </div>
@@ -244,7 +248,7 @@
         method: 'POST',
         headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'evenement', nom: val('nom'), email: val('email'), telephone: val('tel'),
+          type: 'evenement', civilite: val('civilite'), nom: val('nom'), email: val('email'), telephone: val('tel'),
           sujet: val('evt'), message: val('message')
         })
       }).then(function (r) { return r.json(); }).then(function (res) {

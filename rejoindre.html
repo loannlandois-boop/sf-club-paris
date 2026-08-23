@@ -124,6 +124,10 @@
         <form class="form-card reveal" id="formAdhesion">
           <div class="form-grid">
             <div class="field">
+              <label for="civilite">Civilité</label>
+              <select id="civilite"><option value="M.">Monsieur</option><option value="Mme">Madame</option></select>
+            </div>
+            <div class="field">
               <label for="nom">Nom complet</label>
               <input type="text" id="nom" required>
             </div>
@@ -246,7 +250,7 @@
         method: 'POST',
         headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'adhesion', nom: val('nom'), email: val('email'), telephone: val('tel'),
+          type: 'adhesion', civilite: val('civilite'), nom: val('nom'), email: val('email'), telephone: val('tel'),
           sujet: val('interet'), message: val('message'),
           details: { 'Ville': val('ville'), 'Profil': val('profil') }
         })

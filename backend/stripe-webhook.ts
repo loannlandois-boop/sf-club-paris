@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
             await email(
               clientEmail,
               `Paiement reçu — Réservation confirmée — ${r.reference || ""}`,
-              `<p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p>
+              `<p>Bonjour ${r.civilite ? r.civilite + " " : ""}${r.client_nom ?? ""},</p>
                <p>Nous vous confirmons la réception de votre paiement pour <b>${libelle}</b>. Votre réservation
                est désormais <b>garantie et confirmée</b>.</p>
 

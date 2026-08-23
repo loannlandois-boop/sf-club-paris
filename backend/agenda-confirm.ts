@@ -192,7 +192,7 @@ Deno.serve(async (req) => {
     if (montantCaution) rowsRecap.push(["Caution", `${montantCaution} € (préautorisée, non débitée)`]);
 
     const html = `
-      <p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p>
+      <p>Bonjour ${r.civilite ? r.civilite + " " : ""}${r.client_nom ?? ""},</p>
       <p>Votre réservation est <b>confirmée</b>. Voici le récapitulatif :</p>
 
       ${detailBox(rowsRecap)}

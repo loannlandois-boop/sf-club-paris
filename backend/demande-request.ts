@@ -105,6 +105,7 @@ Deno.serve(async (req) => {
   try {
     const b = await req.json();
     const type = String(b.type || "contact");
+    const civilite = b.civilite || "";
     const nom = b.nom || "";
     const email_ = b.email || "";
     const telephone = b.telephone || "";
@@ -117,7 +118,7 @@ Deno.serve(async (req) => {
     }
 
     const { error } = await sb.from("demandes").insert({
-      type, nom, email: email_, telephone, sujet, message, details,
+      type, civilite, nom, email: email_, telephone, sujet, message, details,
     });
     if (error) {
       console.log("demande-request insert error:", JSON.stringify(error));
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
 
     const lib = LIBELLES[type] || LIBELLES.contact;
     const rows: [string, string][] = [
-      ["Nom", nom],
+      ["Nom", `${civilite ? civilite + " " : ""}${nom}`],
       ["Contact", [email_, telephone].filter(Boolean).join(" · ") || "—"],
     ];
     if (sujet) rows.push(["Sujet", sujet]);
@@ -144,7 +145,7 @@ Deno.serve(async (req) => {
       await email(
         email_,
         lib.sujetClient,
-        `<p>Bonjour Monsieur/Madame ${nom},</p><p>${lib.texteClient}</p>`,
+        `<p>Bonjour ${civilite ? civilite + " " : ""}${nom},</p><p>${lib.texteClient}</p>`,
       );
     }
 

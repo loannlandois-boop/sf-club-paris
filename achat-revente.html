@@ -178,9 +178,9 @@
               </select>
             </div>
           </div>
-          <div class="field" style="margin-top:20px">
-            <label for="nomEst">Nom</label>
-            <input type="text" id="nomEst" required>
+          <div class="form-grid" style="margin-top:20px">
+            <div class="field"><label for="civiliteEst">Civilité</label><select id="civiliteEst"><option value="M.">Monsieur</option><option value="Mme">Madame</option></select></div>
+            <div class="field"><label for="nomEst">Nom</label><input type="text" id="nomEst" required></div>
           </div>
           <div class="field" style="margin-top:20px">
             <label for="coord">Coordonnées</label>
@@ -273,7 +273,7 @@
         method: 'POST',
         headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type: 'estimation', nom: val('nomEst'),
+          type: 'estimation', civilite: val('civiliteEst'), nom: val('nomEst'),
           email: coord.indexOf('@') !== -1 ? coord : '',
           telephone: coord.indexOf('@') === -1 ? coord : '',
           sujet: val('objet'),

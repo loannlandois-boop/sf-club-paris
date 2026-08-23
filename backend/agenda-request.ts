@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
     const heure_arrivee_vol = b.heure_arrivee_vol || null;
     const heure_depart_vol = b.heure_depart_vol || null;
     const prix_total = b.prix_total ?? null;
+    const civilite = b.civilite || null;
     const nom = b.nom ?? "", contact = b.contact ?? "";
 
     if (!date_debut || !date_fin || !contact) {
@@ -86,7 +87,7 @@ Deno.serve(async (req) => {
 
     const { data, error } = await sb.from("agenda_reservations").insert({
       vehicule_id, date_debut, date_fin, heure_debut, heure_fin, adresse_livraison,
-      numero_vol, heure_arrivee_vol, heure_depart_vol,
+      numero_vol, heure_arrivee_vol, heure_depart_vol, civilite,
       client_nom: nom, client_contact: contact, prix_total,
       statut: "en_attente", source: "site",
     }).select("id").maybeSingle();
@@ -120,7 +121,7 @@ Deno.serve(async (req) => {
          ["Livraison", adresse_livraison || "non précisée"],
          ...(numero_vol ? [["Vol", `${numero_vol}${heure_arrivee_vol ? " — arrivée " + heure_arrivee_vol : ""}${heure_depart_vol ? ", départ " + heure_depart_vol : ""}`] as [string, string]] : []),
          ["Prix estimé", prix_total ? prix_total + " €" : "sur devis"],
-         ["Client", `${nom} — ${contact}`],
+         ["Client", `${civilite ? civilite + " " : ""}${nom} — ${contact}`],
        ])}
        <p>Connectez-vous à l'agenda pour valider ou refuser cette demande.</p>`,
     );
@@ -129,7 +130,7 @@ Deno.serve(async (req) => {
       await email(
         contact,
         `Votre demande de réservation a bien été reçue`,
-        `<p>Bonjour Monsieur/Madame ${nom},</p>
+        `<p>Bonjour ${civilite ? civilite + " " : ""}${nom},</p>
          <p>Nous avons bien reçu votre demande pour <b>${libelleVehicule}</b>, du ${date_debut} au ${date_fin}.</p>
          <p>Un conseiller SF Club Paris valide votre réservation sous peu et revient vers vous.</p>`,
       );

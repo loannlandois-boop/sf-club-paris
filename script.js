@@ -479,7 +479,6 @@
     initGate();
     initPreloader();
     initCatalogue();
-    initClubLogin();
     initGallery();
     initCarSearch();
     initPageTransitions();

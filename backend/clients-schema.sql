@@ -34,6 +34,11 @@ create table if not exists public.clients (
 );
 alter table public.clients enable row level security;
 
+drop policy if exists "clients lecture soi" on public.clients;
+drop policy if exists "clients creation soi" on public.clients;
+drop policy if exists "clients maj soi" on public.clients;
+drop policy if exists "clients lecture equipe" on public.clients;
+drop policy if exists "clients maj equipe" on public.clients;
 create policy "clients lecture soi" on public.clients for select to authenticated using (auth.uid() = id);
 create policy "clients creation soi" on public.clients for insert to authenticated with check (auth.uid() = id);
 create policy "clients maj soi" on public.clients for update to authenticated using (auth.uid() = id);

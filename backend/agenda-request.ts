@@ -100,8 +100,13 @@ Deno.serve(async (req) => {
 
     const detailBox = (rows: [string, string][]) => `
       <table role="presentation" width="100%" style="background:#f7f7f5;border:1px solid #ececec;margin:18px 0;">
-        <tr><td style="padding:18px 20px;">
-          ${rows.map(([k, v]) => `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">${k}</span><b>${v}</b></div>`).join("")}
+        <tr><td style="padding:14px 20px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            ${rows.map(([k, v]) => `<tr>
+              <td style="font-size:13.5px;color:#8a8a8a;padding:6px 10px 6px 0;white-space:nowrap;vertical-align:top;">${k}</td>
+              <td style="font-size:13.5px;color:#333;padding:6px 0;vertical-align:top;"><b>${v}</b></td>
+            </tr>`).join("")}
+          </table>
         </td></tr>
       </table>`;
 
@@ -124,7 +129,7 @@ Deno.serve(async (req) => {
       await email(
         contact,
         `Votre demande de réservation a bien été reçue`,
-        `<p>Bonjour ${nom},</p>
+        `<p>Bonjour Monsieur/Madame ${nom},</p>
          <p>Nous avons bien reçu votre demande pour <b>${libelleVehicule}</b>, du ${date_debut} au ${date_fin}.</p>
          <p>Un conseiller SF Club Paris valide votre réservation sous peu et revient vers vous.</p>`,
       );

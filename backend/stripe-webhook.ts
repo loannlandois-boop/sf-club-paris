@@ -145,7 +145,7 @@ Deno.serve(async (req) => {
             await email(
               clientEmail,
               `Paiement reçu — Réservation confirmée — ${r.reference || ""}`,
-              `<p>Bonjour ${r.client_nom ?? ""},</p>
+              `<p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p>
                <p>Nous vous confirmons la réception de votre paiement pour <b>${libelle}</b>. Votre réservation
                est désormais <b>garantie et confirmée</b>.</p>
 
@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
           await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
           const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
           if (clientEmail) {
-            await email(clientEmail, `Paiement reçu — Réservation confirmée — ${r.reference || ""}`, `<p>Bonjour ${r.client_nom ?? ""},</p><p>Votre paiement a bien été reçu, votre réservation <b>${r.reference || ""}</b> est confirmée.</p>`);
+            await email(clientEmail, `Paiement reçu — Réservation confirmée — ${r.reference || ""}`, `<p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p><p>Votre paiement a bien été reçu, votre réservation <b>${r.reference || ""}</b> est confirmée.</p>`);
           }
           await email(INTERNAL, `Paiement reçu — ${r.reference || resId}`, `<p>Paiement encaissé pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}), réservation ${r.reference || resId}.</p>`);
         }

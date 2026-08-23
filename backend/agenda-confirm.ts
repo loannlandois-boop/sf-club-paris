@@ -66,6 +66,21 @@ function bouton(url: string, texte: string) {
   return `<a href="${url}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;margin:6px 8px 6px 0;">${texte}</a>`;
 }
 
+// Tableau à 2 colonnes (label / valeur) : plus fiable que inline-block/min-width
+// pour l'alignement, en particulier dans Outlook.
+function detailBox(rows: [string, string][]) {
+  return `<table role="presentation" width="100%" style="background:#f7f7f5;border:1px solid #ececec;margin:18px 0;">
+    <tr><td style="padding:14px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        ${rows.map(([k, v]) => `<tr>
+          <td style="font-size:13.5px;color:#8a8a8a;padding:6px 10px 6px 0;white-space:nowrap;vertical-align:top;">${k}</td>
+          <td style="font-size:13.5px;color:#333;padding:6px 0;vertical-align:top;"><b>${v}</b></td>
+        </tr>`).join("")}
+      </table>
+    </td></tr>
+  </table>`;
+}
+
 async function email(to: string, subject: string, bodyHtml: string) {
   if (!to) return;
   await fetch("https://api.resend.com/emails", {
@@ -159,27 +174,26 @@ Deno.serve(async (req) => {
       `${libelle} — ${r.date_debut} au ${r.date_fin}`,
       montantLocation, montantCaution, id, clientEmail,
     );
+    if (!lienPay) {
+      console.log(`agenda-confirm: aucun lien genere pour reservation ${id} (montantLocation=${montantLocation}, montantCaution=${montantCaution})`);
+    }
 
     await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienPay, reference }).eq("id", id);
 
-    const vol = r.numero_vol
-      ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Vol</span><b>${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}</b></div>`
-      : "";
+    const rowsRecap: [string, string][] = [
+      ["Véhicule", libelle],
+      ["Dates", `${r.date_debut}${r.heure_debut ? " " + r.heure_debut : ""} → ${r.date_fin}${r.heure_fin ? " " + r.heure_fin : ""}`],
+    ];
+    if (r.adresse_livraison) rowsRecap.push(["Livraison", r.adresse_livraison]);
+    if (r.numero_vol) rowsRecap.push(["Vol", `${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}`]);
+    if (montantLocation) rowsRecap.push(["Montant location", `${montantLocation} €`]);
+    if (montantCaution) rowsRecap.push(["Caution", `${montantCaution} € (préautorisée, non débitée)`]);
 
     const html = `
-      <p>Bonjour ${r.client_nom ?? ""},</p>
+      <p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p>
       <p>Votre réservation est <b>confirmée</b>. Voici le récapitulatif :</p>
 
-      <table role="presentation" width="100%" style="background:#f7f7f5;border:1px solid #ececec;margin:18px 0;">
-        <tr><td style="padding:18px 20px;">
-          <div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Véhicule</span><b>${libelle}</b></div>
-          <div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Dates</span><b>${r.date_debut}${r.heure_debut ? " " + r.heure_debut : ""} → ${r.date_fin}${r.heure_fin ? " " + r.heure_fin : ""}</b></div>
-          ${r.adresse_livraison ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Livraison</span><b>${r.adresse_livraison}</b></div>` : ""}
-          ${vol}
-          ${montantLocation ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Montant location</span><b>${montantLocation} €</b></div>` : ""}
-          ${montantCaution ? `<div style="font-size:13.5px;color:#333;padding:5px 0;"><span style="color:#8a8a8a;display:inline-block;min-width:120px;">Caution</span><b>${montantCaution} € (préautorisée, non débitée)</b></div>` : ""}
-        </td></tr>
-      </table>
+      ${detailBox(rowsRecap)}
 
       <table role="presentation" style="margin:0 0 22px;">
         <tr><td style="background:#0A0A0A;padding:14px 22px;text-align:center;">
@@ -209,7 +223,7 @@ Deno.serve(async (req) => {
       INTERNAL,
       `Réservation validée — ${reference}`,
       `<p>Réservation <b>${reference}</b> validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
-       ${vol}
+       ${r.numero_vol ? `<p>Vol ${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}</p>` : ""}
        <p style="margin-top:14px;">Lien de paiement (location ${montantLocation} € + caution ${montantCaution} €) :
        ${lienPay ? `<a href="${lienPay}">${lienPay}</a>` : "non généré"}</p>`,
     );

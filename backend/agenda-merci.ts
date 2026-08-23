@@ -75,7 +75,7 @@ Deno.serve(async (_req) => {
         await email(
           clientEmail,
           `Merci de votre confiance — SF Club Paris`,
-          `<p>Bonjour ${r.client_nom ?? ""},</p>
+          `<p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p>
            <p>Nous espérons que vous avez passé un excellent moment au volant de votre <b>${libelle}</b>.</p>
            <p>Toute l'équipe SF Club Paris vous remercie pour votre confiance, et espère vous accueillir à
            nouveau très prochainement.</p>

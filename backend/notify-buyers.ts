@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
           await email(
             s.contact,
             `Un ${car.marque} ${car.modele} correspond à votre recherche`,
-            `<p>Bonjour ${s.nom ?? ""},</p><p>Un véhicule correspondant à votre recherche vient d'être proposé au Club : <b>${car.marque} ${car.modele}</b>${car.annee ? ` (${car.annee})` : ""}${car.couleur ? `, ${car.couleur}` : ""}.</p><p>Notre équipe vous met en relation.</p>`,
+            `<p>Bonjour Monsieur/Madame ${s.nom ?? ""},</p><p>Un véhicule correspondant à votre recherche vient d'être proposé au Club : <b>${car.marque} ${car.modele}</b>${car.annee ? ` (${car.annee})` : ""}${car.couleur ? `, ${car.couleur}` : ""}.</p><p>Notre équipe vous met en relation.</p>`,
           );
         }
       }
@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
         await email(
           car.contact,
           `Votre véhicule a bien été transmis à SF Club Paris`,
-          `<p>Bonjour ${car.nom ?? ""},</p><p>Nous avons bien reçu votre annonce : <b>${car.marque} ${car.modele}</b>${car.annee ? ` (${car.annee})` : ""}.</p><p>${matches.length ? `${matches.length} acheteur(s) du Club recherchent déjà ce type de véhicule — un conseiller va vous mettre en relation.` : `Votre véhicule est désormais visible par les acheteurs du Club dont la recherche correspond. Vous serez notifié dès qu'une opportunité se présente.`}</p>`,
+          `<p>Bonjour Monsieur/Madame ${car.nom ?? ""},</p><p>Nous avons bien reçu votre annonce : <b>${car.marque} ${car.modele}</b>${car.annee ? ` (${car.annee})` : ""}.</p><p>${matches.length ? `${matches.length} acheteur(s) du Club recherchent déjà ce type de véhicule — un conseiller va vous mettre en relation.` : `Votre véhicule est désormais visible par les acheteurs du Club dont la recherche correspond. Vous serez notifié dès qu'une opportunité se présente.`}</p>`,
         );
       }
     }
@@ -120,8 +120,8 @@ Deno.serve(async (req) => {
             ? `${matches.length} véhicule(s) correspondent à votre recherche`
             : `Votre alerte SF Match est active`,
           matches.length
-            ? `<p>Bonjour ${s.nom ?? ""},</p><p>${matches.length} véhicule(s) du Club correspondent déjà à votre recherche <b>${s.marque} ${s.modele ?? ""}</b>. Notre équipe vous recontacte.</p>`
-            : `<p>Bonjour ${s.nom ?? ""},</p><p>Votre recherche <b>${s.marque} ${s.modele ?? ""}</b> a bien été enregistrée. Dès qu'un véhicule correspondant — ou similaire — est déposé au Club, vous êtes notifié en priorité.</p>`,
+            ? `<p>Bonjour Monsieur/Madame ${s.nom ?? ""},</p><p>${matches.length} véhicule(s) du Club correspondent déjà à votre recherche <b>${s.marque} ${s.modele ?? ""}</b>. Notre équipe vous recontacte.</p>`
+            : `<p>Bonjour Monsieur/Madame ${s.nom ?? ""},</p><p>Votre recherche <b>${s.marque} ${s.modele ?? ""}</b> a bien été enregistrée. Dès qu'un véhicule correspondant — ou similaire — est déposé au Club, vous êtes notifié en priorité.</p>`,
         );
       }
     }

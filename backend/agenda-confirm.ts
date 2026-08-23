@@ -112,7 +112,7 @@ function lienCombine(libelle: string, montantLocation: number, montantCaution: n
     client_reference_id: String(reservationId),
     "metadata[reservation_id]": String(reservationId),
     "metadata[type]": "combine",
-    "invoice_creation[enabled]": "true",
+    customer_creation: "always",
     success_url: `${SITE_URL}/ma-reservation.html?paiement=ok`,
     cancel_url: `${SITE_URL}/index.html`,
   };

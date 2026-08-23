@@ -79,6 +79,55 @@ async function capturerPartiel(paymentIntentId: string, montantCents: number) {
   return r.ok;
 }
 
+// Génère une facture Stripe manuellement (via l'API Invoicing) plutôt que via
+// invoice_creation sur la session : incompatible avec la capture manuelle
+// (nécessaire pour que la caution reste préautorisée). Le paiement a déjà été
+// pris via la session Checkout ; on marque juste la facture payée "hors ligne".
+async function genererFacture(customerId: string, libelle: string, montantLocationCents: number, montantCautionCents: number) {
+  try {
+    if (montantLocationCents > 0) {
+      await fetch("https://api.stripe.com/v1/invoiceitems", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ customer: customerId, currency: "eur", amount: String(montantLocationCents), description: `Location — ${libelle}` }),
+      });
+    }
+    if (montantCautionCents > 0) {
+      await fetch("https://api.stripe.com/v1/invoiceitems", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ customer: customerId, currency: "eur", amount: String(montantCautionCents), description: `Caution (préautorisation) — ${libelle}` }),
+      });
+    }
+    const invRes = await fetch("https://api.stripe.com/v1/invoices", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ customer: customerId, collection_method: "send_invoice", days_until_due: "1" }),
+    });
+    const inv = await invRes.json();
+    if (!invRes.ok) { console.log("stripe invoice create error:", JSON.stringify(inv)); return null; }
+
+    const finRes = await fetch(`https://api.stripe.com/v1/invoices/${inv.id}/finalize`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${STRIPE_KEY}` },
+    });
+    const fin = await finRes.json();
+    if (!finRes.ok) { console.log("stripe invoice finalize error:", JSON.stringify(fin)); return null; }
+
+    const payRes = await fetch(`https://api.stripe.com/v1/invoices/${fin.id}/pay`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ paid_out_of_band: "true" }),
+    });
+    const paid = await payRes.json();
+    if (!payRes.ok) { console.log("stripe invoice pay error:", JSON.stringify(paid)); return { invoice_pdf: fin.invoice_pdf, hosted_invoice_url: fin.hosted_invoice_url }; }
+    return { invoice_pdf: paid.invoice_pdf, hosted_invoice_url: paid.hosted_invoice_url };
+  } catch (e) {
+    console.log("genererFacture error:", String(e));
+    return null;
+  }
+}
+
 async function verifyStripeSignature(payload: string, sigHeader: string, secret: string): Promise<boolean> {
   const parts: Record<string, string> = {};
   for (const p of sigHeader.split(",")) {
@@ -123,14 +172,14 @@ Deno.serve(async (req) => {
             await capturerPartiel(session.payment_intent, montantLocationCents);
           }
 
+          const v = r.agenda_vehicules || {};
+          const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
           let facturePdf: string | null = null;
           let factureUrl: string | null = null;
-          if (session.invoice) {
-            const inv = await fetch(`https://api.stripe.com/v1/invoices/${session.invoice}`, {
-              headers: { Authorization: `Bearer ${STRIPE_KEY}` },
-            }).then((x) => x.json()).catch(() => null);
-            facturePdf = inv?.invoice_pdf || null;
-            factureUrl = inv?.hosted_invoice_url || null;
+          if (session.customer) {
+            const fac = await genererFacture(session.customer, libelle, montantLocationCents, montantCautionCents);
+            facturePdf = fac?.invoice_pdf || null;
+            factureUrl = fac?.hosted_invoice_url || null;
           }
 
           await sb.from("agenda_reservations").update({
@@ -138,8 +187,6 @@ Deno.serve(async (req) => {
             caution_recue: montantCautionCents > 0,
           }).eq("id", resId);
 
-          const v = r.agenda_vehicules || {};
-          const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
           const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
           if (clientEmail) {
             await email(

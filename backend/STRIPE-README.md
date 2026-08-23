@@ -96,8 +96,10 @@ terminent et envoie le remerciement.
 - **Un seul lien** couvre la location et la caution. Dès le paiement, le montant de la
   location est encaissé automatiquement (capture immédiate) tandis que la caution reste
   simplement préautorisée sur la carte — jamais débitée sauf dommages constatés.
-- Une **facture PDF** est générée automatiquement par Stripe et jointe (lien de
-  téléchargement) dans l'e-mail de confirmation envoyé après paiement.
+- Une **facture PDF** est générée juste après le paiement (via l'API Stripe, dans
+  `stripe-webhook`, car la génération automatique de Stripe n'est pas compatible avec la
+  capture manuelle utilisée pour la caution) et jointe (lien de téléchargement) dans l'e-mail
+  de remerciement envoyé après paiement.
 - Sans clé Stripe configurée, la validation fonctionne quand même (le véhicule se bloque,
   l'e-mail part), simplement sans lien de paiement — le client est informé qu'un conseiller
   le recontacte pour le règlement.

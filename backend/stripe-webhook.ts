@@ -4,7 +4,8 @@
 // juste le clic sur le lien). Sur "checkout.session.completed" :
 //  - type "paiement" -> marque la réservation payée, récupère la facture
 //    Stripe (générée automatiquement, capture automatique donc compatible),
-//    envoie l'e-mail de confirmation avec le numéro de réservation
+//    crédite les points de fidélité si l'e-mail correspond à un compte
+//    client (1 point / 10 € dépensés), envoie l'e-mail de confirmation
 //  - type "caution"  -> marque la caution comme préautorisée, notifie l'équipe
 //
 // IMPORTANT : à déployer avec la vérification JWT DÉSACTIVÉE (Stripe
@@ -127,6 +128,20 @@ Deno.serve(async (req) => {
 
           await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
 
+          // Points de fidélité : si l'e-mail du client correspond à un compte SF Club,
+          // on lie la réservation à son compte et on crédite 1 point par 10 € dépensés.
+          let pointsGagnes = 0;
+          let pointsTotal: number | null = null;
+          if (r.client_contact) {
+            const { data: cli } = await sb.from("clients").select("id, points").eq("email", r.client_contact).maybeSingle();
+            if (cli) {
+              pointsGagnes = Math.round((r.prix_total || 0) / 10);
+              pointsTotal = (cli.points || 0) + pointsGagnes;
+              await sb.from("clients").update({ points: pointsTotal }).eq("id", cli.id);
+              await sb.from("agenda_reservations").update({ client_id: cli.id }).eq("id", resId);
+            }
+          }
+
           const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
           if (clientEmail) {
             await email(
@@ -143,6 +158,7 @@ Deno.serve(async (req) => {
                  </td></tr>
                </table>
 
+               ${pointsTotal != null ? `<p style="font-size:13.5px;color:#666;">+${pointsGagnes} points de fidélité crédités sur votre compte (total : ${pointsTotal} points). <a href="${SITE_URL}/mon-compte.html" style="color:#0A0A0A;">Voir mon compte</a>.</p>` : ""}
                ${facturePdf ? `<div style="margin:20px 0;"><a href="${facturePdf}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Télécharger ma facture (PDF)</a></div>` : ""}
                ${factureUrl && !facturePdf ? `<p><a href="${factureUrl}">Consulter ma facture</a></p>` : ""}
                <p style="font-size:13.5px;color:#666;">Conservez votre numéro de réservation : il vous permet de retrouver votre réservation

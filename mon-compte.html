@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mon compte — SF CLUB PARIS</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .points-band { background:#0A0A0A; padding:36px 32px; text-align:center; margin-bottom:2px; }
+    .points-band .n { font-family:var(--serif); font-weight:800; font-size:3rem; color:#fff; line-height:1; }
+    .points-band .lbl { font-size:.72rem; letter-spacing:.2em; text-transform:uppercase; color:#999; margin-top:6px; }
+    .tier-badge { display:inline-block; margin-top:14px; padding:.4em 1.1em; font-size:.72rem; letter-spacing:.15em; text-transform:uppercase; border:1px solid var(--gold); color:var(--gold); }
+    .tier-progress { max-width:420px; margin:22px auto 0; height:3px; background:rgba(255,255,255,.15); position:relative; }
+    .tier-progress__bar { height:100%; background:var(--gold); }
+    .tier-hint { font-size:.78rem; color:#999; margin-top:10px; }
+    .resa-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; padding:1rem 1.2rem; border:1px solid var(--border); border-top:none; font-size:.9rem; }
+    .resa-row:first-of-type { border-top:1px solid var(--border); }
+    .resa-row b { color:#fff; }
+    .resa-row span.muted-line { color:var(--text-muted); display:block; font-size:.8rem; margin-top:2px; }
+    #accountDash { display:none; }
+  </style>
+</head>
+<body>
+
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav>
+        <ul class="nav__menu">
+          <li><a href="location.html">Location</a></li>
+          <li><a href="evenements.html">Événements</a></li>
+          <li><a href="financement.html">Financement</a></li>
+          <li><a href="achat-revente.html">Achat &amp; Revente</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="nav__actions"><a href="location.html" class="btn btn--solid nav__cta">Réserver</a><button class="btn btn--solid nav__cta nav__cta--club" id="btnLogout" style="display:none">Déconnexion</button></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== NON CONNECTÉ ===== -->
+    <section class="club-login" id="notLogged">
+      <div class="container center" style="max-width:440px">
+        <span class="eyebrow reveal">Espace membres</span>
+        <h1 class="reveal" data-delay="1" style="font-size:clamp(2.2rem,7vw,3rem)">Mon compte</h1>
+        <p class="muted reveal" data-delay="2" style="margin-bottom:1.6rem">Connectez-vous pour accéder à vos points et à vos réservations.</p>
+        <a href="connexion.html" class="btn btn--solid btn--lg">Se connecter</a>
+      </div>
+    </section>
+
+    <!-- ===== ESPACE CLIENT ===== -->
+    <section id="accountDash">
+      <div class="points-band">
+        <span class="eyebrow" style="color:#999" id="accWelcome">Bonjour</span>
+        <div class="n" id="accPoints">0</div>
+        <div class="lbl">Points de fidélité</div>
+        <div class="tier-badge" id="accTier">Bronze</div>
+        <div class="tier-progress"><div class="tier-progress__bar" id="tierBar" style="width:0%"></div></div>
+        <p class="tier-hint" id="tierHint"></p>
+      </div>
+
+      <div class="section">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Historique</span>
+            <h2>Mes réservations</h2>
+          </div>
+          <div id="resaList"><p class="muted">Chargement…</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom" style="border-top:0;justify-content:center">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+
+    // Paliers de fidélité : ajustables librement.
+    var PALIERS = [
+      { nom: 'Bronze', min: 0 },
+      { nom: 'Argent', min: 300 },
+      { nom: 'Or', min: 1000 }
+    ];
+
+    function getSession() {
+      try { return JSON.parse(sessionStorage.getItem('sf_client_session') || 'null'); } catch (e) { return null; }
+    }
+    function setSession(s) { try { sessionStorage.setItem('sf_client_session', JSON.stringify(s)); } catch (e) {} }
+    function clearSession() { try { sessionStorage.removeItem('sf_client_session'); } catch (e) {} }
+
+    function authFetch(path, opts) {
+      opts = opts || {};
+      var s = getSession();
+      if (!s) return Promise.reject('no session');
+      function withToken(token) {
+        var headers = Object.assign({ apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, opts.headers || {});
+        return fetch(SB_URL + path, Object.assign({}, opts, { headers: headers }));
+      }
+      if (Date.now() < s.exp - 5000) return withToken(s.token);
+      return fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: s.refresh })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.access_token) { clearSession(); showLogin(); return Promise.reject('session expiree'); }
+        setSession({ token: d.access_token, refresh: d.refresh_token, exp: Date.now() + (d.expires_in || 3600) * 1000 });
+        return withToken(d.access_token);
+      });
+    }
+
+    function showLogin() {
+      document.getElementById('notLogged').style.display = '';
+      document.getElementById('accountDash').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'none';
+    }
+    function showDash() {
+      document.getElementById('notLogged').style.display = 'none';
+      document.getElementById('accountDash').style.display = 'block';
+      document.getElementById('btnLogout').style.display = '';
+      loadProfil();
+      loadReservations();
+    }
+
+    document.getElementById('btnLogout').addEventListener('click', function () { clearSession(); showLogin(); });
+
+    function palierDe(points) {
+      var courant = PALIERS[0];
+      for (var i = 0; i < PALIERS.length; i++) if (points >= PALIERS[i].min) courant = PALIERS[i];
+      var idx = PALIERS.indexOf(courant);
+      var suivant = PALIERS[idx + 1] || null;
+      return { courant: courant, suivant: suivant };
+    }
+
+    function loadProfil() {
+      authFetch('/rest/v1/clients?select=*&limit=1').then(function (r) { return r.json(); }).then(function (rows) {
+        var c = rows && rows[0];
+        if (!c) return;
+        document.getElementById('accWelcome').textContent = 'Bonjour ' + (c.civilite ? c.civilite + ' ' : '') + (c.prenom || '') + ' ' + (c.nom || '');
+        document.getElementById('accPoints').textContent = c.points || 0;
+        var p = palierDe(c.points || 0);
+        document.getElementById('accTier').textContent = p.courant.nom;
+        if (p.suivant) {
+          var pct = Math.min(100, Math.round(((c.points - p.courant.min) / (p.suivant.min - p.courant.min)) * 100));
+          document.getElementById('tierBar').style.width = pct + '%';
+          document.getElementById('tierHint').textContent = (p.suivant.min - c.points) + ' points avant le palier ' + p.suivant.nom;
+        } else {
+          document.getElementById('tierBar').style.width = '100%';
+          document.getElementById('tierHint').textContent = 'Palier maximum atteint';
+        }
+      }).catch(function () {});
+    }
+
+    function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : '—'; }
+
+    function loadReservations() {
+      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&order=date_debut.desc')
+        .then(function (r) { return r ? r.json() : []; })
+        .then(function (rows) {
+          var box = document.getElementById('resaList');
+          box.innerHTML = '';
+          if (!rows || !rows.length) { box.innerHTML = '<p class="muted">Aucune réservation pour l\'instant. <a href="location.html" class="gold">Réservez votre premier véhicule</a>.</p>'; return; }
+          rows.forEach(function (r) {
+            var v = r.agenda_vehicules || {};
+            var row = document.createElement('div');
+            row.className = 'resa-row';
+            row.innerHTML =
+              '<div><b>' + (v.marque || '') + ' ' + (v.modele || '') + '</b>' +
+              '<span class="muted-line">' + r.date_debut + ' → ' + r.date_fin + (r.reference ? ' · ' + r.reference : '') + '</span></div>' +
+              '<div><span class="badge">' + (r.paye ? 'Payée' : r.statut) + '</span> ' + fmtPrix(r.prix_total) + '</div>';
+            box.appendChild(row);
+          });
+        }).catch(function () {
+          document.getElementById('resaList').innerHTML = '<p class="muted">Impossible de charger vos réservations pour le moment.</p>';
+        });
+    }
+
+    var s = getSession();
+    if (s) showDash(); else showLogin();
+  })();
+  </script>
+</body>
+</html>

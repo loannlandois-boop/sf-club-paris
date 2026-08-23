@@ -32,31 +32,58 @@
 
   <main>
     <section class="club-login">
-      <div class="container" style="max-width:440px">
+      <div class="container" style="max-width:460px">
         <div class="center" style="margin-bottom:30px">
           <span class="eyebrow reveal">Espace membres</span>
-          <h1 class="reveal" data-delay="1" style="font-size:clamp(2.6rem,8vw,3.6rem)">Connexion</h1>
-          <p class="muted reveal" data-delay="2">Accédez à votre espace privé SF CLUB PARIS.</p>
+          <h1 class="reveal" data-delay="1" style="font-size:clamp(2.4rem,7vw,3.2rem)" id="pageTitle">Connexion</h1>
+          <p class="muted reveal" data-delay="2" id="pageSub">Accédez à votre espace privé SF CLUB PARIS — points de fidélité et suivi de vos réservations.</p>
         </div>
 
-        <form class="form-card reveal" data-delay="2" id="clubLogin">
-          <div class="field">
-            <label for="identifiant">Identifiant</label>
-            <input type="text" id="identifiant" autocomplete="username" required>
-          </div>
-          <div class="field">
-            <label for="motdepasse">Mot de passe</label>
-            <input type="password" id="motdepasse" autocomplete="current-password" required>
-          </div>
-          <a href="#" class="muted club-forgot">Mot de passe oublié ?</a>
-          <button type="submit" class="btn btn--solid btn--lg btn--block">Se connecter</button>
-        </form>
-
-        <div class="center" style="margin-top:30px">
-          <hr class="gold-line" style="margin-bottom:26px">
-          <p class="muted" style="font-size:.85rem;margin-bottom:1rem">Pas encore membre ?</p>
-          <a href="rejoindre.html" class="btn btn--lg btn--block">Rejoindre le club</a>
+        <div class="tool-tabs">
+          <button class="tool-tab is-active" data-panel="login">Se connecter</button>
+          <button class="tool-tab" data-panel="signup">Créer un compte</button>
         </div>
+
+        <!-- CONNEXION -->
+        <div class="tool-panel is-active" id="panel-login">
+          <form class="form-card" id="formLogin">
+            <div class="field">
+              <label for="l-email">Email</label>
+              <input type="email" id="l-email" autocomplete="username" required>
+            </div>
+            <div class="field">
+              <label for="l-pass">Mot de passe</label>
+              <input type="password" id="l-pass" autocomplete="current-password" required>
+            </div>
+            <p class="muted" id="loginError" style="color:#d66;font-size:.85rem;display:none"></p>
+            <button type="submit" class="btn btn--solid btn--lg btn--block">Se connecter</button>
+          </form>
+        </div>
+
+        <!-- CRÉATION DE COMPTE -->
+        <div class="tool-panel" id="panel-signup">
+          <form class="form-card" id="formSignup">
+            <div class="form-grid">
+              <div class="field"><label for="s-civilite">Civilité</label><select id="s-civilite"><option value="M.">Monsieur</option><option value="Mme">Madame</option></select></div>
+              <div class="field"><label for="s-prenom">Prénom</label><input type="text" id="s-prenom" required></div>
+              <div class="field"><label for="s-nom">Nom</label><input type="text" id="s-nom" required></div>
+              <div class="field"><label for="s-tel">Téléphone</label><input type="tel" id="s-tel"></div>
+            </div>
+            <div class="field" style="margin-top:20px"><label for="s-email">Email</label><input type="email" id="s-email" autocomplete="username" required></div>
+            <div class="form-grid" style="margin-top:20px">
+              <div class="field"><label for="s-pass">Mot de passe</label><input type="password" id="s-pass" autocomplete="new-password" required minlength="6"></div>
+              <div class="field"><label for="s-pass2">Confirmez</label><input type="password" id="s-pass2" autocomplete="new-password" required minlength="6"></div>
+            </div>
+            <label class="checkbox" style="margin:20px 0">
+              <input type="checkbox" required>
+              <span>J'accepte que mes données soient utilisées pour la gestion de mon compte, conformément à la politique de confidentialité (RGPD).</span>
+            </label>
+            <p class="muted" id="signupError" style="color:#d66;font-size:.85rem;display:none"></p>
+            <p class="muted" id="signupOk" style="color:#8fbf8f;font-size:.85rem;display:none"></p>
+            <button type="submit" class="btn btn--solid btn--lg btn--block">Créer mon compte</button>
+          </form>
+        </div>
+
       </div>
     </section>
   </main>
@@ -70,5 +97,113 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+
+    function setClientSession(s) { try { sessionStorage.setItem('sf_client_session', JSON.stringify(s)); } catch (e) {} }
+
+    // Onglets
+    document.querySelectorAll('.tool-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.tool-tab').forEach(function (x) { x.classList.remove('is-active'); });
+        document.querySelectorAll('.tool-panel').forEach(function (x) { x.classList.remove('is-active'); });
+        t.classList.add('is-active');
+        document.getElementById('panel-' + t.dataset.panel).classList.add('is-active');
+        document.getElementById('pageTitle').textContent = t.dataset.panel === 'signup' ? 'Créer un compte' : 'Connexion';
+      });
+    });
+
+    // ---- Connexion ----
+    var formLogin = document.getElementById('formLogin');
+    formLogin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('l-email').value.trim();
+      var pass = document.getElementById('l-pass').value;
+      var err = document.getElementById('loginError');
+      err.style.display = 'none';
+      fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pass })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { err.textContent = 'Identifiants incorrects.'; err.style.display = ''; return; }
+          setClientSession({ token: res.d.access_token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
+          window.location.href = 'mon-compte.html';
+        }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+    });
+
+    // ---- Création de compte ----
+    var formSignup = document.getElementById('formSignup');
+    formSignup.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var err = document.getElementById('signupError');
+      var ok = document.getElementById('signupOk');
+      err.style.display = 'none'; ok.style.display = 'none';
+
+      var pass = document.getElementById('s-pass').value;
+      var pass2 = document.getElementById('s-pass2').value;
+      if (pass !== pass2) { err.textContent = 'Les mots de passe ne correspondent pas.'; err.style.display = ''; return; }
+
+      var civilite = document.getElementById('s-civilite').value;
+      var prenom = document.getElementById('s-prenom').value.trim();
+      var nom = document.getElementById('s-nom').value.trim();
+      var telephone = document.getElementById('s-tel').value.trim();
+      var email = document.getElementById('s-email').value.trim();
+
+      var btn = formSignup.querySelector('button[type="submit"]');
+      btn.disabled = true; btn.textContent = 'Création…';
+
+      fetch(SB_URL + '/auth/v1/signup', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pass })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            err.textContent = (res.d && res.d.msg) || 'Impossible de créer le compte (adresse déjà utilisée ?).';
+            err.style.display = ''; btn.disabled = false; btn.textContent = 'Créer mon compte';
+            return;
+          }
+          var token = res.d.access_token;
+          var userId = res.d.user ? res.d.user.id : (res.d.id || null);
+
+          if (!token) {
+            // Confirmation par e-mail activée côté Supabase : pas de session immédiate.
+            ok.textContent = 'Compte créé ! Vérifiez votre boîte mail pour confirmer votre adresse, puis connectez-vous.';
+            ok.style.display = '';
+            btn.disabled = false; btn.textContent = 'Créer mon compte';
+            formSignup.reset();
+            return;
+          }
+
+          setClientSession({ token: token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
+
+          fetch(SB_URL + '/rest/v1/clients', {
+            method: 'POST',
+            headers: {
+              apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=minimal'
+            },
+            body: JSON.stringify({ id: userId, civilite: civilite, prenom: prenom, nom: nom, email: email, telephone: telephone, points: 0 })
+          }).then(function () {
+            window.location.href = 'mon-compte.html';
+          }).catch(function () {
+            window.location.href = 'mon-compte.html';
+          });
+        }).catch(function () {
+          err.textContent = 'Erreur lors de la création du compte.'; err.style.display = '';
+          btn.disabled = false; btn.textContent = 'Créer mon compte';
+        });
+    });
+
+    // Déjà connecté ? -> direct vers l'espace client
+    try {
+      var s = JSON.parse(sessionStorage.getItem('sf_client_session') || 'null');
+      if (s && Date.now() < s.exp + 30 * 24 * 3600 * 1000) window.location.href = 'mon-compte.html';
+    } catch (e) {}
+  })();
+  </script>
 </body>
 </html>

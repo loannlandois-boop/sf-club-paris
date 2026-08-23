@@ -51,7 +51,7 @@
         <p class="hero__sub reveal" data-delay="2">Nous sourçons, négocions et cédons les automobiles d'exception. Un accompagnement discret, de la recherche à la transaction.</p>
         <div class="btn-row reveal" data-delay="3">
           <a href="sf-match.html" class="btn btn--solid btn--lg">Vendre via SF Match</a>
-          <a href="contact.html" class="btn btn--lg">Estimer mon véhicule</a>
+          <a href="#demande" class="btn btn--lg" data-objet="Estimation / Reprise">Estimer mon véhicule</a>
         </div>
       </div>
     </section>
@@ -102,7 +102,7 @@
               <li>Inspection technique indépendante</li>
               <li>Financement de l'acquisition proposé</li>
             </ul>
-            <a href="contact.html" class="btn btn--block">Lancer une recherche</a>
+            <a href="#demande" class="btn btn--block" data-objet="Recherche / Achat d'un modèle">Lancer une recherche</a>
           </article>
 
           <article class="card reveal" data-delay="1">
@@ -114,7 +114,7 @@
               <li>Reprise &amp; paiement sécurisé</li>
               <li>Reprise en échange d'un autre modèle</li>
             </ul>
-            <a href="contact.html" class="btn btn--block">Estimer mon véhicule</a>
+            <a href="#demande" class="btn btn--block" data-objet="Estimation / Reprise">Estimer mon véhicule</a>
           </article>
 
           <article class="card reveal" data-delay="2">
@@ -126,7 +126,7 @@
               <li>Vente confidentielle &amp; réseau privé</li>
               <li>Gestion administrative complète</li>
             </ul>
-            <a href="contact.html" class="btn btn--block">Confier mon véhicule</a>
+            <a href="#demande" class="btn btn--block" data-objet="Dépôt-vente / Mandat">Confier mon véhicule</a>
           </article>
         </div>
       </div>
@@ -147,7 +147,7 @@
     <hr class="gold-line">
 
     <!-- ===== DEMANDE D'ESTIMATION ===== -->
-    <section class="section">
+    <section class="section" id="demande">
       <div class="container" style="max-width:760px">
         <div class="section-head">
           <span class="eyebrow">Estimation</span>
@@ -255,6 +255,13 @@
     var form = document.getElementById('formEstimation');
     if (!form) return;
     var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    document.querySelectorAll('a[data-objet]').forEach(function (a) {
+      a.addEventListener('click', function () {
+        var objetSelect = document.getElementById('objet');
+        if (objetSelect) objetSelect.value = a.dataset.objet;
+      });
+    });
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();

@@ -120,16 +120,54 @@
       </div>
     </section>
 
-    <!-- ===== CTA ===== -->
-    <section class="section cta-band">
-      <div class="container center">
-        <hr class="gold-line--short">
-        <h2 class="reveal">Rejoindre le prochain rendez-vous ?</h2>
-        <p class="muted reveal" data-delay="1">Les places sont limitées et réservées aux membres. Contactez-nous pour le calendrier.</p>
-        <div class="btn-row reveal" data-delay="2" style="justify-content:center">
-          <a href="contact.html" class="btn btn--solid btn--lg">Demander le programme</a>
-          <a href="tel:0783212749" class="btn btn--lg">07 83 21 27 49</a>
+    <hr class="gold-line">
+
+    <!-- ===== DEMANDE ===== -->
+    <section class="section" id="demande">
+      <div class="container" style="max-width:760px">
+        <div class="section-head">
+          <span class="eyebrow">Rejoindre le prochain rendez-vous</span>
+          <h2>Demander le programme</h2>
+          <p>Les places sont limitées et réservées aux membres. Indiquez-nous ce qui vous intéresse, nous revenons vers vous avec le calendrier et les modalités d'accès.</p>
         </div>
+        <form class="form-card reveal" id="formEvenement">
+          <div class="form-grid">
+            <div class="field">
+              <label for="nom">Nom complet</label>
+              <input type="text" id="nom" required>
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input type="email" id="email" required>
+            </div>
+            <div class="field">
+              <label for="tel">Téléphone</label>
+              <input type="tel" id="tel">
+            </div>
+            <div class="field">
+              <label for="evt">Événement qui vous intéresse</label>
+              <select id="evt">
+                <option>GP de Monaco</option>
+                <option>Track Days</option>
+                <option>Car on Ice</option>
+                <option>Porsche Experience</option>
+                <option>Balades &amp; Caves</option>
+                <option>Cavalcade</option>
+                <option>Boat Show</option>
+                <option>New Car Delivery</option>
+                <option>Expériences exclusives</option>
+                <option>Plusieurs / tout le programme</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-top:20px">
+            <label for="message">Précisions (optionnel)</label>
+            <textarea id="message" placeholder="Dates envisagées, nombre de personnes…"></textarea>
+          </div>
+          <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Demander le programme</button>
+          <div class="form-msg">Merci ! Votre demande a bien été enregistrée. Notre équipe vous transmet le programme sous peu.</div>
+        </form>
+        <p class="muted center" style="margin-top:1.4rem;font-size:.85rem">Ou appelez-nous directement au <a href="tel:0783212749" class="gold">07 83 21 27 49</a>.</p>
       </div>
     </section>
 
@@ -189,5 +227,34 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+    var form = document.getElementById('formEvenement');
+    if (!form) return;
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var msg = form.querySelector('.form-msg');
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      fetch(SB_URL + '/functions/v1/demande-request', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'evenement', nom: val('nom'), email: val('email'), telephone: val('tel'),
+          sujet: val('evt'), message: val('message')
+        })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.ok) {
+          msg.classList.add('is-visible'); msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          form.reset(); btn.textContent = 'Demande envoyée ✓';
+        } else { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; }
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; });
+    });
+  })();
+  </script>
 </body>
 </html>

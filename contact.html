@@ -77,7 +77,7 @@
           </div>
 
           <!-- FORMULAIRE -->
-          <form class="form-card reveal" data-delay="1" data-form>
+          <form class="form-card reveal" data-delay="1" id="formContact">
             <div class="form-grid">
               <div class="field">
                 <label for="nom">Nom complet</label>
@@ -95,9 +95,9 @@
                 <label for="objet">Objet</label>
                 <select id="objet">
                   <option>Réservation</option>
-                  <option>Partenariat loueur</option>
-                  <option>Mutualisation flotte</option>
+                  <option>Événement</option>
                   <option>Financement</option>
+                  <option>Achat &amp; Revente</option>
                   <option>Autre</option>
                 </select>
               </div>
@@ -174,5 +174,34 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+    var form = document.getElementById('formContact');
+    if (!form) return;
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var msg = form.querySelector('.form-msg');
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      fetch(SB_URL + '/functions/v1/demande-request', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'contact', nom: val('nom'), email: val('email'), telephone: val('tel'),
+          sujet: val('objet'), message: val('message')
+        })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.ok) {
+          msg.classList.add('is-visible'); msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          form.reset(); btn.textContent = 'Message envoyé ✓';
+        } else { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; }
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; });
+    });
+  })();
+  </script>
 </body>
 </html>

@@ -154,7 +154,7 @@
           <h2>Demandez votre estimation</h2>
           <p>Quelques informations suffisent. Nous revenons vers vous sous 24 h.</p>
         </div>
-        <form class="form-card reveal" data-form>
+        <form class="form-card reveal" id="formEstimation">
           <div class="form-grid">
             <div class="field">
               <label for="marque">Marque &amp; modèle</label>
@@ -177,6 +177,10 @@
                 <option>Autre</option>
               </select>
             </div>
+          </div>
+          <div class="field" style="margin-top:20px">
+            <label for="nomEst">Nom</label>
+            <input type="text" id="nomEst" required>
           </div>
           <div class="field" style="margin-top:20px">
             <label for="coord">Coordonnées</label>
@@ -244,5 +248,38 @@
   </footer>
 
   <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+    var form = document.getElementById('formEstimation');
+    if (!form) return;
+    var val = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = form.querySelector('button[type="submit"]');
+      var msg = form.querySelector('.form-msg');
+      var coord = val('coord');
+      btn.disabled = true; btn.textContent = 'Envoi…';
+      fetch(SB_URL + '/functions/v1/demande-request', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'estimation', nom: val('nomEst'),
+          email: coord.indexOf('@') !== -1 ? coord : '',
+          telephone: coord.indexOf('@') === -1 ? coord : '',
+          sujet: val('objet'),
+          details: { 'Véhicule': val('marque'), 'Année': val('annee'), 'Kilométrage': val('km') }
+        })
+      }).then(function (r) { return r.json(); }).then(function (res) {
+        if (res && res.ok) {
+          msg.classList.add('is-visible'); msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          form.reset(); btn.textContent = 'Demande envoyée ✓';
+        } else { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; }
+      }).catch(function () { btn.disabled = false; btn.textContent = 'Erreur, réessayez'; });
+    });
+  })();
+  </script>
 </body>
 </html>

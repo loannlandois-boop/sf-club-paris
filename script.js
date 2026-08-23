@@ -473,22 +473,6 @@
     compute();
   }
 
-  /* -------- 5. Formulaires (feedback sans backend) -------- */
-  function initForms() {
-    document.querySelectorAll('form[data-form]').forEach(function (form) {
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        const msg = form.querySelector('.form-msg');
-        if (msg) {
-          msg.classList.add('is-visible');
-          msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        form.reset();
-        // Réinitialiser les valeurs simulées si présentes
-      });
-    });
-  }
-
   /* -------- 6. Recherche comparateur (scroll vers résultats) -------- */
   function initSearch() {
     const search = document.querySelector('[data-search]');
@@ -517,7 +501,6 @@
     initReveal();
     initFilters();
     initSimulator();
-    initForms();
     initSearch();
 
     // Dates par défaut sur le comparateur

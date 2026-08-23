@@ -93,17 +93,17 @@ C'est tout : chaque jour à 10h (heure UTC), la tâche planifiée vérifie les l
 terminent et envoie le remerciement.
 
 ## Notes
-- **Un seul lien** couvre la location et la caution. Dès le paiement, le montant de la
-  location est encaissé automatiquement (capture immédiate) tandis que la caution reste
-  simplement préautorisée sur la carte — jamais débitée sauf dommages constatés.
-- Une **facture PDF** est générée juste après le paiement (via l'API Stripe, dans
-  `stripe-webhook`, car la génération automatique de Stripe n'est pas compatible avec la
-  capture manuelle utilisée pour la caution) et jointe (lien de téléchargement) dans l'e-mail
-  de remerciement envoyé après paiement.
+- **2 liens distincts** : location (capture automatique, facture générée par Stripe) et
+  caution (capture manuelle, jamais débitée sauf dommages). Les combiner dans un seul lien
+  a été essayé puis abandonné : Stripe refuse la génération de facture automatique dès qu'une
+  session mélange capture automatique et manuelle.
+- Une **facture PDF** est générée automatiquement par Stripe sur le lien de paiement
+  (capture automatique = compatible) et jointe (lien de téléchargement) dans l'e-mail envoyé
+  après paiement.
 - Sans clé Stripe configurée, la validation fonctionne quand même (le véhicule se bloque,
   l'e-mail part), simplement sans lien de paiement — le client est informé qu'un conseiller
   le recontacte pour le règlement.
-- La capture (si dommages) ou la libération de la part caution préautorisée se fait
+- La capture (si dommages) ou la libération de la caution préautorisée se fait
   manuellement dans le Dashboard Stripe → **Payments** → repérez le paiement partiellement
   capturé → capturez le reliquat (dommages) ou laissez expirer (libération automatique,
   généralement sous 7 jours selon la banque).

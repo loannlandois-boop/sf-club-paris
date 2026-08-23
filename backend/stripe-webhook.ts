@@ -1,15 +1,11 @@
 // ============================================================
 // SF AGENDA — Edge Function "stripe-webhook"
-// Reçoit les événements Stripe en direct (paiement réellement encaissé,
-// pas juste le clic sur le lien). Sur "checkout.session.completed", type
-// "combine" (lien unique location + caution) :
-//  - si une caution est incluse (capture manuelle), capture immédiatement
-//    UNIQUEMENT la part location (l'argent arrive normalement), laissant la
-//    part caution simplement préautorisée sur la carte
-//  - marque la réservation payée, envoie l'e-mail de confirmation
-//    (paiement reçu + réservation confirmée) avec le numéro de réservation
-// (Conserve aussi les anciens types "paiement"/"caution" pour compatibilité
-// avec des liens déjà envoyés avant ce changement.)
+// Reçoit les événements Stripe en direct (paiement réellement encaissé, pas
+// juste le clic sur le lien). Sur "checkout.session.completed" :
+//  - type "paiement" -> marque la réservation payée, récupère la facture
+//    Stripe (générée automatiquement, capture automatique donc compatible),
+//    envoie l'e-mail de confirmation avec le numéro de réservation
+//  - type "caution"  -> marque la caution comme préautorisée, notifie l'équipe
 //
 // IMPORTANT : à déployer avec la vérification JWT DÉSACTIVÉE (Stripe
 // n'envoie pas de jeton Supabase). La sécurité est assurée par la
@@ -68,62 +64,16 @@ async function email(to: string, subject: string, bodyHtml: string) {
   });
 }
 
-async function capturerPartiel(paymentIntentId: string, montantCents: number) {
-  const r = await fetch(`https://api.stripe.com/v1/payment_intents/${paymentIntentId}/capture`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({ amount_to_capture: String(montantCents) }),
-  });
-  const d = await r.json();
-  if (!r.ok) console.log("stripe capture error:", JSON.stringify(d));
-  return r.ok;
-}
-
-// Génère une facture Stripe manuellement (via l'API Invoicing) plutôt que via
-// invoice_creation sur la session : incompatible avec la capture manuelle
-// (nécessaire pour que la caution reste préautorisée). Le paiement a déjà été
-// pris via la session Checkout ; on marque juste la facture payée "hors ligne".
-async function genererFacture(customerId: string, libelle: string, montantLocationCents: number, montantCautionCents: number) {
+async function recupererFacture(invoiceId: string) {
   try {
-    if (montantLocationCents > 0) {
-      await fetch("https://api.stripe.com/v1/invoiceitems", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ customer: customerId, currency: "eur", amount: String(montantLocationCents), description: `Location — ${libelle}` }),
-      });
-    }
-    if (montantCautionCents > 0) {
-      await fetch("https://api.stripe.com/v1/invoiceitems", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ customer: customerId, currency: "eur", amount: String(montantCautionCents), description: `Caution (préautorisation) — ${libelle}` }),
-      });
-    }
-    const invRes = await fetch("https://api.stripe.com/v1/invoices", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ customer: customerId, collection_method: "send_invoice", days_until_due: "1" }),
-    });
-    const inv = await invRes.json();
-    if (!invRes.ok) { console.log("stripe invoice create error:", JSON.stringify(inv)); return null; }
-
-    const finRes = await fetch(`https://api.stripe.com/v1/invoices/${inv.id}/finalize`, {
-      method: "POST",
+    const r = await fetch(`https://api.stripe.com/v1/invoices/${invoiceId}`, {
       headers: { Authorization: `Bearer ${STRIPE_KEY}` },
     });
-    const fin = await finRes.json();
-    if (!finRes.ok) { console.log("stripe invoice finalize error:", JSON.stringify(fin)); return null; }
-
-    const payRes = await fetch(`https://api.stripe.com/v1/invoices/${fin.id}/pay`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${STRIPE_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ paid_out_of_band: "true" }),
-    });
-    const paid = await payRes.json();
-    if (!payRes.ok) { console.log("stripe invoice pay error:", JSON.stringify(paid)); return { invoice_pdf: fin.invoice_pdf, hosted_invoice_url: fin.hosted_invoice_url }; }
-    return { invoice_pdf: paid.invoice_pdf, hosted_invoice_url: paid.hosted_invoice_url };
+    const d = await r.json();
+    if (!r.ok) { console.log("stripe invoice fetch error:", JSON.stringify(d)); return null; }
+    return { invoice_pdf: d.invoice_pdf || null, hosted_invoice_url: d.hosted_invoice_url || null };
   } catch (e) {
-    console.log("genererFacture error:", String(e));
+    console.log("recupererFacture error:", String(e));
     return null;
   }
 }
@@ -157,35 +107,25 @@ Deno.serve(async (req) => {
       const resId = session.client_reference_id || session.metadata?.reservation_id;
       const type = session.metadata?.type;
 
-      if (resId && type === "combine") {
+      if (resId && type === "paiement") {
         const { data: r } = await sb
           .from("agenda_reservations")
           .select("*, agenda_vehicules(marque,modele)")
           .eq("id", resId)
           .maybeSingle();
         if (r && !r.paye) {
-          const montantLocationCents = Number(session.metadata?.montant_location_cents || 0);
-          const montantCautionCents = Number(session.metadata?.montant_caution_cents || 0);
-          const manualCapture = session.metadata?.manual_capture === "1";
-
-          if (manualCapture && montantLocationCents > 0 && session.payment_intent) {
-            await capturerPartiel(session.payment_intent, montantLocationCents);
-          }
-
           const v = r.agenda_vehicules || {};
           const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
+
           let facturePdf: string | null = null;
           let factureUrl: string | null = null;
-          if (session.customer) {
-            const fac = await genererFacture(session.customer, libelle, montantLocationCents, montantCautionCents);
+          if (session.invoice) {
+            const fac = await recupererFacture(session.invoice);
             facturePdf = fac?.invoice_pdf || null;
             factureUrl = fac?.hosted_invoice_url || null;
           }
 
-          await sb.from("agenda_reservations").update({
-            paye: true,
-            caution_recue: montantCautionCents > 0,
-          }).eq("id", resId);
+          await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
 
           const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
           if (clientEmail) {
@@ -203,7 +143,6 @@ Deno.serve(async (req) => {
                  </td></tr>
                </table>
 
-               ${montantCautionCents > 0 ? `<p style="font-size:13.5px;color:#666;">La caution reste préautorisée sur votre carte, non débitée sauf dommages constatés.</p>` : ""}
                ${facturePdf ? `<div style="margin:20px 0;"><a href="${facturePdf}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Télécharger ma facture (PDF)</a></div>` : ""}
                ${factureUrl && !facturePdf ? `<p><a href="${factureUrl}">Consulter ma facture</a></p>` : ""}
                <p style="font-size:13.5px;color:#666;">Conservez votre numéro de réservation : il vous permet de retrouver votre réservation
@@ -216,23 +155,25 @@ Deno.serve(async (req) => {
             INTERNAL,
             `Paiement reçu — ${r.reference || resId}`,
             `<p>Paiement encaissé pour <b>${r.client_nom ?? ""}</b> (${r.client_contact ?? ""}), réservation <b>${r.reference || resId}</b>.</p>
-             <p>Location : ${(montantLocationCents / 100).toFixed(2)} € encaissée${montantCautionCents ? ` · Caution : ${(montantCautionCents / 100).toFixed(2)} € préautorisée` : ""}.</p>
              ${facturePdf ? `<p>Facture : <a href="${facturePdf}">${facturePdf}</a></p>` : ""}`,
           );
         }
-      } else if (resId && type === "paiement") {
-        // Compatibilité avec d'anciens liens envoyés avant le passage au lien combiné.
-        const { data: r } = await sb.from("agenda_reservations").select("*, agenda_vehicules(marque,modele)").eq("id", resId).maybeSingle();
-        if (r && !r.paye) {
-          await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
-          const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
-          if (clientEmail) {
-            await email(clientEmail, `Paiement reçu — Réservation confirmée — ${r.reference || ""}`, `<p>Bonjour Monsieur/Madame ${r.client_nom ?? ""},</p><p>Votre paiement a bien été reçu, votre réservation <b>${r.reference || ""}</b> est confirmée.</p>`);
-          }
-          await email(INTERNAL, `Paiement reçu — ${r.reference || resId}`, `<p>Paiement encaissé pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}), réservation ${r.reference || resId}.</p>`);
-        }
       } else if (resId && type === "caution") {
-        await sb.from("agenda_reservations").update({ caution_recue: true }).eq("id", resId);
+        const { data: r } = await sb
+          .from("agenda_reservations")
+          .select("*, agenda_vehicules(marque,modele)")
+          .eq("id", resId)
+          .maybeSingle();
+        if (r && !r.caution_recue) {
+          await sb.from("agenda_reservations").update({ caution_recue: true }).eq("id", resId);
+          const v = r.agenda_vehicules || {};
+          const libelle = ((v.marque || "") + " " + (v.modele || "")).trim() || "votre véhicule";
+          await email(
+            INTERNAL,
+            `Caution préautorisée — ${r.reference || resId}`,
+            `<p>Caution préautorisée pour <b>${r.client_nom ?? ""}</b> (${r.client_contact ?? ""}), réservation <b>${r.reference || resId}</b> — ${libelle}.</p>`,
+          );
+        }
       }
     }
 

@@ -1,9 +1,10 @@
 // ============================================================
 // SF AGENDA — Edge Function "agenda-confirm"
 // Appelée par l'équipe (admin-agenda.html) pour valider une réservation :
-// bloque le véhicule, génère UN SEUL lien de paiement Stripe couvrant à la
-// fois la location et la caution (préautorisée, capturée séparément par
-// stripe-webhook), et envoie l'e-mail de confirmation au client avec les
+// bloque le véhicule, génère DEUX liens de paiement Stripe distincts —
+// paiement de la location (capture immédiate, facture générée par Stripe) et
+// préautorisation de la caution (capture manuelle, jamais débitée sauf
+// dommages) — et envoie l'e-mail de confirmation au client avec les
 // documents demandés.
 //
 // Sécurité : la mise à jour du statut passe par le token de l'appelant
@@ -101,41 +102,44 @@ async function stripeSession(params: Record<string, string>) {
   return d.url as string;
 }
 
-// Un seul lien Stripe pour la location + la caution. Si une caution existe, la
-// capture est "manuelle" : dès le paiement, le webhook capture immédiatement la
-// part location (l'argent arrive normalement), et laisse la part caution
-// simplement préautorisée sur la carte (non débitée, capturée plus tard
-// seulement en cas de dommages, ou relâchée automatiquement sinon).
-function lienCombine(libelle: string, montantLocation: number, montantCaution: number, reservationId: number, email?: string) {
+// Deux liens Stripe distincts (redevenu séparé : combiner paiement automatique
+// + caution manuelle dans UNE session est rejeté par Stripe quand une facture
+// est demandée — "Post-payment invoice creation does not support separate
+// authorization and capture"). Le lien location est encaissé immédiatement
+// (capture automatique, facture générée par Stripe). Le lien caution est une
+// pure préautorisation (capture manuelle), jamais débitée sauf dommages.
+function lienPaiement(libelle: string, montant: number, reservationId: number, email?: string) {
   const p: Record<string, string> = {
     mode: "payment",
     client_reference_id: String(reservationId),
     "metadata[reservation_id]": String(reservationId),
-    "metadata[type]": "combine",
-    customer_creation: "always",
+    "metadata[type]": "paiement",
+    "invoice_creation[enabled]": "true",
+    "line_items[0][price_data][currency]": "eur",
+    "line_items[0][price_data][product_data][name]": `Location — ${libelle}`,
+    "line_items[0][price_data][unit_amount]": String(Math.round(montant * 100)),
+    "line_items[0][quantity]": "1",
     success_url: `${SITE_URL}/ma-reservation.html?paiement=ok`,
     cancel_url: `${SITE_URL}/index.html`,
   };
-  let idx = 0;
-  if (montantLocation > 0) {
-    p[`line_items[${idx}][price_data][currency]`] = "eur";
-    p[`line_items[${idx}][price_data][product_data][name]`] = `Location — ${libelle}`;
-    p[`line_items[${idx}][price_data][unit_amount]`] = String(Math.round(montantLocation * 100));
-    p[`line_items[${idx}][quantity]`] = "1";
-    p["metadata[montant_location_cents]"] = String(Math.round(montantLocation * 100));
-    idx++;
-  }
-  if (montantCaution > 0) {
-    p[`line_items[${idx}][price_data][currency]`] = "eur";
-    p[`line_items[${idx}][price_data][product_data][name]`] = `Caution (préautorisation, non débitée) — ${libelle}`;
-    p[`line_items[${idx}][price_data][unit_amount]`] = String(Math.round(montantCaution * 100));
-    p[`line_items[${idx}][quantity]`] = "1";
-    p["metadata[montant_caution_cents]"] = String(Math.round(montantCaution * 100));
-    p["payment_intent_data[capture_method]"] = "manual";
-    p["metadata[manual_capture]"] = "1";
-    idx++;
-  }
-  if (idx === 0) return Promise.resolve(null);
+  if (email && email.includes("@")) p["customer_email"] = email;
+  return stripeSession(p);
+}
+
+function lienCaution(libelle: string, montant: number, reservationId: number, email?: string) {
+  const p: Record<string, string> = {
+    mode: "payment",
+    client_reference_id: String(reservationId),
+    "metadata[reservation_id]": String(reservationId),
+    "metadata[type]": "caution",
+    "payment_intent_data[capture_method]": "manual",
+    "line_items[0][price_data][currency]": "eur",
+    "line_items[0][price_data][product_data][name]": `Caution (préautorisation, non débitée) — ${libelle}`,
+    "line_items[0][price_data][unit_amount]": String(Math.round(montant * 100)),
+    "line_items[0][quantity]": "1",
+    success_url: `${SITE_URL}/ma-reservation.html?caution=ok`,
+    cancel_url: `${SITE_URL}/index.html`,
+  };
   if (email && email.includes("@")) p["customer_email"] = email;
   return stripeSession(p);
 }
@@ -169,16 +173,14 @@ Deno.serve(async (req) => {
 
     const montantLocation = r.prix_total || 0;
     const montantCaution = v.caution || 0;
-    const montantTotal = montantLocation + montantCaution;
-    const lienPay = await lienCombine(
-      `${libelle} — ${r.date_debut} au ${r.date_fin}`,
-      montantLocation, montantCaution, id, clientEmail,
-    );
-    if (!lienPay) {
-      console.log(`agenda-confirm: aucun lien genere pour reservation ${id} (montantLocation=${montantLocation}, montantCaution=${montantCaution})`);
-    }
+    const libelleComplet = `${libelle} — ${r.date_debut} au ${r.date_fin}`;
 
-    await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienPay, reference }).eq("id", id);
+    const lienPay = montantLocation > 0 ? await lienPaiement(libelleComplet, montantLocation, id, clientEmail) : null;
+    const lienDep = montantCaution > 0 ? await lienCaution(libelleComplet, montantCaution, id, clientEmail) : null;
+    if (montantLocation > 0 && !lienPay) console.log(`agenda-confirm: lien paiement non genere pour reservation ${id}`);
+    if (montantCaution > 0 && !lienDep) console.log(`agenda-confirm: lien caution non genere pour reservation ${id}`);
+
+    await sbService.from("agenda_reservations").update({ lien_paiement: lienPay, lien_caution: lienDep, reference }).eq("id", id);
 
     const rowsRecap: [string, string][] = [
       ["Véhicule", libelle],
@@ -209,14 +211,14 @@ Deno.serve(async (req) => {
         <li>Une copie de votre permis de conduire</li>
         <li>Une copie de votre passeport ou carte d'identité</li>
       </ul>
-      <p style="font-size:13.5px;color:#666;">Aucune photo de carte bancaire n'est nécessaire : le paiement de la location
-      est encaissé immédiatement, et la caution reste préautorisée sur votre carte — jamais débitée sauf dommages
-      constatés, relâchée automatiquement sinon.</p>
+      <p style="font-size:13.5px;color:#666;">Aucune photo de carte bancaire n'est nécessaire : la caution est prélevée en
+      préautorisation de façon sécurisée directement via le lien ci-dessous.</p>
 
       <div style="margin-top:22px;">
-        ${lienPay ? bouton(lienPay, `Payer et confirmer — ${montantTotal} €`) : ""}
+        ${lienPay ? bouton(lienPay, `Payer la location — ${montantLocation} €`) : ""}
+        ${lienDep ? bouton(lienDep, `Préautoriser la caution — ${montantCaution} €`) : ""}
       </div>
-      ${!lienPay ? `<p style="font-size:13.5px;color:#666;">Le montant à régler vous sera confirmé par un conseiller.</p>` : ""}`;
+      ${!lienPay && montantLocation ? `<p style="font-size:13.5px;color:#666;">Le montant à régler vous sera confirmé par un conseiller.</p>` : ""}`;
 
     if (clientEmail) await email(clientEmail, `Réservation confirmée — ${reference}`, html);
     await email(
@@ -224,11 +226,11 @@ Deno.serve(async (req) => {
       `Réservation validée — ${reference}`,
       `<p>Réservation <b>${reference}</b> validée pour ${r.client_nom ?? ""} (${r.client_contact ?? ""}).</p>
        ${r.numero_vol ? `<p>Vol ${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}</p>` : ""}
-       <p style="margin-top:14px;">Lien de paiement (location ${montantLocation} € + caution ${montantCaution} €) :
-       ${lienPay ? `<a href="${lienPay}">${lienPay}</a>` : "non généré"}</p>`,
+       <p style="margin-top:14px;">Lien paiement : ${lienPay ? `<a href="${lienPay}">${lienPay}</a>` : "non généré"}</p>
+       <p>Lien caution : ${lienDep ? `<a href="${lienDep}">${lienDep}</a>` : "non généré"}</p>`,
     );
 
-    return new Response(JSON.stringify({ ok: true, reference, lien_paiement: lienPay }), { headers: CORS });
+    return new Response(JSON.stringify({ ok: true, reference, lien_paiement: lienPay, lien_caution: lienDep }), { headers: CORS });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS });
   }

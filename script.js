@@ -271,16 +271,6 @@
   }
 
   /* -------- 0i. Connexion Club -------- */
-  function initClubLogin() {
-    var form = document.getElementById('clubLogin');
-    if (!form) return;
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      try { sessionStorage.setItem('bb_member', '1'); } catch (e) {}
-      window.location.href = 'club-espace.html';
-    });
-  }
-
   /* -------- 0j. Galerie membres (lightbox) -------- */
   function initGallery() {
     var g = document.getElementById('gallery');

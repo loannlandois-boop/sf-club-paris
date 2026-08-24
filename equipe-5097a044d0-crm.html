@@ -51,7 +51,7 @@
   <header class="nav">
     <div class="container nav__inner">
       <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
-      <nav><ul class="nav__menu"><li><a href="admin-agenda.html">Agenda</a></li><li><a href="index.html">Site public</a></li></ul></nav>
+      <nav><ul class="nav__menu"><li><a href="equipe-5097a044d0-agenda.html">Agenda</a></li><li><a href="index.html">Site public</a></li></ul></nav>
       <div class="nav__actions"><button class="btn btn--solid nav__cta" id="btnLogout" style="display:none">Déconnexion</button></div>
       <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
     </div>
@@ -99,6 +99,7 @@
           <button data-panel="revenus">Paiements</button>
           <button data-panel="visites">Visites du site</button>
           <button data-panel="clients">Clients</button>
+          <button data-panel="equipe">Équipe</button>
         </div>
 
         <!-- TÂCHES -->
@@ -154,6 +155,27 @@
             <table class="datatable" id="clientsTable">
               <thead><tr><th>Client</th><th>Contact</th><th>Points</th><th>Palier</th><th>Réservations</th><th>Total dépensé</th><th>Inscrit le</th></tr></thead>
               <tbody id="clientsBody"><tr><td colspan="7" class="muted">Chargement…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ÉQUIPE -->
+        <div class="crm-panel" id="panel-equipe">
+          <form class="form-card" id="formEquipe" style="max-width:560px;margin-bottom:2rem">
+            <h3 style="font-size:1rem;margin-bottom:1.2rem">Ajouter un membre de l'équipe</h3>
+            <div class="form-grid">
+              <div class="field"><label for="eq-nom">Nom</label><input type="text" id="eq-nom"></div>
+              <div class="field"><label for="eq-email">Email</label><input type="email" id="eq-email" required></div>
+            </div>
+            <p class="muted" style="font-size:.82rem;margin-top:10px">Un mot de passe temporaire sera généré et envoyé par e-mail à cette adresse, avec le lien vers l'espace équipe.</p>
+            <button type="submit" class="btn btn--solid btn--lg" style="margin-top:14px">Ajouter et envoyer l'accès</button>
+            <p class="muted" id="equipeError" style="color:#d66;font-size:.85rem;display:none;margin-top:1rem"></p>
+            <p class="muted" id="equipeOk" style="color:#3a8a5c;font-size:.85rem;display:none;margin-top:1rem">Compte créé, accès envoyé par e-mail.</p>
+          </form>
+          <div class="table-scroll">
+            <table class="datatable" id="equipeTable">
+              <thead><tr><th>Nom</th><th>Email</th><th>Membre depuis</th></tr></thead>
+              <tbody id="equipeBody"><tr><td colspan="3" class="muted">Chargement…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -452,7 +474,46 @@
       chargerVisites();
       chargerClients();
       chargerTaches();
+      chargerEquipe();
     }
+
+    // ---- Équipe ----
+    function chargerEquipe() {
+      authFetch('/rest/v1/staff_users?select=email,nom,created_at&order=created_at.asc')
+        .then(function (r) { return r.json(); }).then(function (rows) {
+          rows = rows || [];
+          var body = document.getElementById('equipeBody');
+          if (!rows.length) { body.innerHTML = '<tr><td colspan="3" class="muted">Aucun membre.</td></tr>'; return; }
+          body.innerHTML = '';
+          rows.forEach(function (m) {
+            var tr = document.createElement('tr');
+            var d = m.created_at ? new Date(m.created_at).toLocaleDateString('fr-FR') : '—';
+            tr.innerHTML = '<td>' + (m.nom || '—') + '</td><td>' + (m.email || '—') + '</td><td>' + d + '</td>';
+            body.appendChild(tr);
+          });
+        }).catch(function () {});
+    }
+
+    var formEquipe = document.getElementById('formEquipe');
+    formEquipe.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('eq-email').value.trim();
+      var nom = document.getElementById('eq-nom').value.trim();
+      var err = document.getElementById('equipeError');
+      var ok = document.getElementById('equipeOk');
+      err.style.display = 'none';
+      ok.style.display = 'none';
+      var s = getSession();
+      if (!s) return;
+      authFetch('/functions/v1/staff-invite', { method: 'POST', body: JSON.stringify({ email: email, nom: nom }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { err.textContent = res.d.error || 'Erreur.'; err.style.display = ''; return; }
+          ok.style.display = '';
+          formEquipe.reset();
+          chargerEquipe();
+        }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+    });
 
     var s = getSession();
     if (s) showDash(); else showLogin();

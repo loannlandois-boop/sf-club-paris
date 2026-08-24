@@ -12,7 +12,7 @@
   'use strict';
 
   /* -------- -1. Compteur de visite (anonyme, sans cookie) -------- */
-  var PAGES_INTERNES = ['admin-agenda.html', 'admin-crm.html'];
+  var PAGES_INTERNES = ['equipe-5097a044d0-agenda.html', 'equipe-5097a044d0-crm.html'];
   function trackVisite() {
     try {
       var page = location.pathname.split('/').pop() || 'index.html';

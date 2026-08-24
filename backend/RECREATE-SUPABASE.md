@@ -43,12 +43,14 @@ Sinon, recréez un compte et re-vérifiez le domaine (DNS Squarespace) comme la 
 3. Collez le résultat dans SQL Editor → **Run**.
 
 ## 7. Créer votre compte équipe (pour l'agenda interne)
-**Authentication → Users → Add user** → email + mot de passe. C'est ce compte qui vous connecte sur
-`admin-agenda.html`.
+**Authentication → Users → Add user** → email + mot de passe, puis SQL Editor →
+`insert into public.staff_users (id, email) values ('<UUID>', '<email>');` → **Run**. C'est ce compte qui
+vous connecte sur `equipe-5097a044d0-agenda.html`. Les membres suivants s'ajoutent ensuite directement
+depuis le CRM (onglet Équipe), sans repasser par SQL Editor.
 
 ## 8. Me communiquer 2 valeurs
 Dans **Project Settings → API** : **Project URL** + clé **anon public** → envoyez-les moi ici. Je les
-recolle dans le site (`sf-match.html`, `location.html`, `admin-agenda.html`) et je redéploie.
+recolle dans le site (`sf-match.html`, `location.html`, `equipe-5097a044d0-agenda.html`) et je redéploie.
 
 ## 9. Importer les données de test
 Une fois que je vous confirme le site à jour, **Table Editor** :

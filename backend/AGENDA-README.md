@@ -4,7 +4,7 @@ Ce qui a été construit :
 - Une page publique (**Location**) où un visiteur/vous tapez une marque + des dates → le site dit si c'est
   disponible et calcule le prix automatiquement (tarif dégressif 1-3j / 4-6j / 7-13j / 14j+). Si indisponible,
   il propose un véhicule équivalent (même segment) qui, lui, est libre — avec son prix.
-- Une page interne **`admin-agenda.html`** (non listée dans le menu, réservée à l'équipe) qui affiche les
+- Une page interne **`equipe-5097a044d0-agenda.html`** (non listée dans le menu, réservée à l'équipe) qui affiche les
   **demandes en attente** venues du site (avec boutons Valider/Refuser), les **réservations confirmées** à
   venir, et permet d'en créer une manuellement (ex. après un appel téléphonique).
 - Une demande envoyée depuis le site **ne bloque pas** le véhicule tant qu'elle n'est pas **validée** dans
@@ -17,9 +17,14 @@ Ce qui a été construit :
 SQL Editor → New query → collez le contenu de [`agenda-schema.sql`](agenda-schema.sql) → **Run**.
 
 ## 2. Créer votre compte équipe (connexion à l'agenda)
-Authentication → **Users** → **Add user** → renseignez un email et un mot de passe (ex. le vôtre).
-C'est ce compte qui vous servira à vous connecter sur `admin-agenda.html`. Vous pouvez créer un compte par
-membre de l'équipe qui doit gérer l'agenda.
+Authentication → **Users** → **Add user** → renseignez un email et un mot de passe (ex. le vôtre), puis
+SQL Editor → collez `insert into public.staff_users (id, email) values ('<VOTRE_UUID>', '<votre email>');`
+(UUID copié depuis Authentication → Users) → **Run**. C'est ce tout premier compte qui vous servira à vous
+connecter sur `equipe-5097a044d0-agenda.html` ou `equipe-5097a044d0-crm.html`.
+
+Pour tous les membres suivants, plus besoin de SQL Editor : une fois connecté, allez dans le **CRM** →
+onglet **Équipe** → renseignez nom + email → le compte est créé automatiquement et la personne reçoit ses
+identifiants par e-mail.
 
 ## 3. Déployer les 2 fonctions
 1. `agenda-availability` ← [`agenda-availability.ts`](agenda-availability.ts) → **Deploy**
@@ -41,13 +46,14 @@ suv, berline_luxe, sport, citadine, berline, autre`.
 - **Site public** → [location.html](../location.html) → section "Vérifiez la disponibilité" → tapez une marque
   du CSV démo (ex. *Ferrari*) avec des dates → le prix s'affiche. Choisissez des dates qui se chevauchent avec
   une réservation existante (créée depuis l'agenda interne) pour voir la proposition d'alternative.
-- **Agenda interne** → `admin-agenda.html` → connectez-vous avec le compte créé à l'étape 2 → créez une
+- **Agenda interne** → `equipe-5097a044d0-agenda.html` → connectez-vous avec le compte créé à l'étape 2 → créez une
   réservation test → elle apparaît dans "Réservations à venir".
 
 ## Notes
 - Le prix est calculé automatiquement selon la durée : 1-3 jours, 4-6 jours, 7-13 jours, 14 jours et plus —
   chaque palier a son propre tarif/jour dans le CSV (dégressif).
-- `admin-agenda.html` n'est lié depuis aucun menu du site — gardez son URL confidentielle, partagez-la
-  uniquement à l'équipe.
+- `equipe-5097a044d0-agenda.html` et `equipe-5097a044d0-crm.html` ne sont liées depuis aucun menu du site
+  et ont une adresse volontairement non devinable — gardez ces URLs confidentielles, partagez-les
+  uniquement à l'équipe (par exemple via le lien reçu dans l'e-mail d'invitation).
 - Pour ajouter/modifier des véhicules plus tard, ré-importez un CSV (Table Editor accepte la mise à jour) ou
   éditez directement les lignes dans le Table Editor.

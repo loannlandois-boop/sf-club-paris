@@ -1,7 +1,7 @@
 # Activer les paiements Stripe (location + caution)
 
 Ce qui a été construit : quand vous validez une réservation dans l'agenda interne
-(`admin-agenda.html`), le système génère automatiquement **2 liens Stripe** et les envoie
+(`equipe-5097a044d0-agenda.html`), le système génère automatiquement **2 liens Stripe** et les envoie
 au client par e-mail avec la demande de documents (permis + passeport/CNI) :
 - Un lien pour **payer le montant de la location**
 - Un lien pour **préautoriser la caution** (le montant est "bloqué" sur la carte, jamais

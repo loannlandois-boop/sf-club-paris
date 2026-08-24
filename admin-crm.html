@@ -104,13 +104,18 @@
         <!-- TÂCHES -->
         <div class="crm-panel is-active" id="panel-taches">
           <form class="form-card" id="formTache" style="max-width:700px;margin-bottom:2rem">
+            <input type="hidden" id="t-id" value="">
+            <h3 style="font-size:1rem;margin-bottom:1.2rem" id="tacheFormTitre">Nouvelle tâche</h3>
             <div class="form-grid">
               <div class="field"><label for="t-titre">Titre</label><input type="text" id="t-titre" required></div>
               <div class="field"><label for="t-priorite">Priorité</label><select id="t-priorite"><option value="normale">Normale</option><option value="urgente">Urgente</option></select></div>
               <div class="field"><label for="t-echeance">Échéance (optionnel)</label><input type="date" id="t-echeance"></div>
             </div>
             <div class="field" style="margin-top:20px"><label for="t-desc">Description</label><textarea id="t-desc"></textarea></div>
-            <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Ajouter la tâche</button>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button type="submit" class="btn btn--solid btn--lg" style="flex:1" id="tacheSubmitBtn">Ajouter la tâche</button>
+              <button type="button" class="btn btn--lg" id="tacheAnnulerBtn" style="display:none">Annuler</button>
+            </div>
             <p class="muted" id="tacheError" style="color:#d66;font-size:.85rem;display:none;margin-top:1rem"></p>
           </form>
           <div class="section-head"><h3 style="font-size:1.3rem">À faire</h3></div>
@@ -381,11 +386,14 @@
       authFetch('/rest/v1/taches?select=*&statut=eq.fait&order=termine_at.desc&limit=20')
         .then(function (r) { return r.json(); }).then(function (rows) { renderTaches(rows || [], 'tachesFaites', false); }).catch(function () {});
     }
+    var tachesCache = {};
+
     function renderTaches(rows, containerId, actionable) {
       var box = document.getElementById(containerId);
       box.innerHTML = '';
       if (!rows.length) { box.innerHTML = '<p class="muted">Rien ici.</p>'; return; }
       rows.forEach(function (t) {
+        tachesCache[t.id] = t;
         var row = document.createElement('div');
         row.className = 'tache-row' + (t.priorite === 'urgente' ? ' is-urgente' : '');
         row.innerHTML =
@@ -395,6 +403,7 @@
           '</div>' +
           '<div style="display:flex;align-items:center;gap:10px">' +
           (t.origine === 'auto' ? '<span class="tache-tag tache-tag--auto">Auto</span>' : '') +
+          '<button type="button" class="agenda-link" data-edit="' + t.id + '">Modifier</button>' +
           (actionable ? '<button type="button" class="btn" data-done="' + t.id + '">Terminé</button>' : '<span class="tache-tag">Fait</span>') +
           '</div>';
         box.appendChild(row);
@@ -407,26 +416,52 @@
           }).then(function () { chargerTaches(); });
         });
       });
+      box.querySelectorAll('[data-edit]').forEach(function (btn) {
+        btn.addEventListener('click', function () { entrerModeEdition(tachesCache[btn.dataset.edit]); });
+      });
     }
+
+    function entrerModeEdition(t) {
+      document.getElementById('t-id').value = t.id;
+      document.getElementById('t-titre').value = t.titre || '';
+      document.getElementById('t-priorite').value = t.priorite || 'normale';
+      document.getElementById('t-echeance').value = t.echeance || '';
+      document.getElementById('t-desc').value = t.description || '';
+      document.getElementById('tacheFormTitre').textContent = 'Modifier la tâche';
+      document.getElementById('tacheSubmitBtn').textContent = 'Enregistrer les modifications';
+      document.getElementById('tacheAnnulerBtn').style.display = '';
+      document.getElementById('formTache').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    function sortirModeEdition() {
+      document.getElementById('formTache').reset();
+      document.getElementById('t-id').value = '';
+      document.getElementById('tacheFormTitre').textContent = 'Nouvelle tâche';
+      document.getElementById('tacheSubmitBtn').textContent = 'Ajouter la tâche';
+      document.getElementById('tacheAnnulerBtn').style.display = 'none';
+    }
+    document.getElementById('tacheAnnulerBtn').addEventListener('click', sortirModeEdition);
+
     document.getElementById('formTache').addEventListener('submit', function (e) {
       e.preventDefault();
+      var id = document.getElementById('t-id').value;
       var titre = document.getElementById('t-titre').value.trim();
       var priorite = document.getElementById('t-priorite').value;
       var echeance = document.getElementById('t-echeance').value || null;
       var desc = document.getElementById('t-desc').value.trim();
       var err = document.getElementById('tacheError');
       err.style.display = 'none';
-      authFetch('/rest/v1/taches', {
-        method: 'POST', headers: { Prefer: 'return=minimal' },
-        body: JSON.stringify({ titre: titre, priorite: priorite, echeance: echeance, description: desc, origine: 'manuelle' })
-      }).then(function (r) {
+      var body = { titre: titre, priorite: priorite, echeance: echeance, description: desc };
+      var req = id
+        ? authFetch('/rest/v1/taches?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) })
+        : authFetch('/rest/v1/taches', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(Object.assign({ origine: 'manuelle' }, body)) });
+      req.then(function (r) {
         if (!r || !r.ok) {
           return (r ? r.text() : Promise.resolve('erreur inconnue')).then(function (t) {
             err.textContent = 'Erreur : ' + t;
             err.style.display = '';
           });
         }
-        document.getElementById('formTache').reset();
+        sortirModeEdition();
         chargerTaches();
       }).catch(function (e2) { err.textContent = 'Erreur : ' + e2; err.style.display = ''; });
     });

@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
     const { data } = await sb
       .from("agenda_reservations")
       .select(
-        "reference,date_debut,date_fin,heure_debut,heure_fin,adresse_livraison,statut,paye,caution_recue,prix_total,numero_vol,heure_arrivee_vol,heure_depart_vol,agenda_vehicules(marque,modele,agence_nom)",
+        "reference,date_debut,date_fin,heure_debut,heure_fin,adresse_livraison,statut,paye,caution_recue,prix_total,numero_vol,heure_arrivee_vol,heure_depart_vol,agenda_vehicules(marque,modele)",
       )
       .eq("reference", String(reference).trim().toUpperCase())
       .ilike("client_contact", String(contact).trim())

@@ -415,7 +415,7 @@
         text.textContent = res.duree + ' jour(s) × ' + fmtPrix(res.prix_jour) + '/jour pour ' + res.vehicule.marque + ' ' + res.vehicule.modele + '. Un conseiller confirme la réservation.';
         var li = document.createElement('li');
         var span = document.createElement('span');
-        span.innerHTML = '<b>' + res.vehicule.marque + ' ' + res.vehicule.modele + '</b> · ' + (res.vehicule.agence_nom || '—');
+        span.innerHTML = '<b>' + res.vehicule.marque + ' ' + res.vehicule.modele + '</b>';
         var btn = document.createElement('button');
         btn.type = 'button'; btn.className = 'btn btn--solid'; btn.textContent = 'Demander cette réservation';
         btn.addEventListener('click', function () { demanderReservation(res.vehicule, debut, fin, res.prix_total, btn); });
@@ -427,7 +427,7 @@
         res.alternatives.forEach(function (a) {
           var li = document.createElement('li');
           var span = document.createElement('span');
-          span.innerHTML = '<b>' + a.vehicule.marque + ' ' + a.vehicule.modele + '</b> · ' + (a.vehicule.agence_nom || '—') + ' · ' + fmtPrix(a.prix_total);
+          span.innerHTML = '<b>' + a.vehicule.marque + ' ' + a.vehicule.modele + '</b> · ' + fmtPrix(a.prix_total);
           var btn = document.createElement('button');
           btn.type = 'button'; btn.className = 'btn'; btn.textContent = 'Demander celle-ci';
           btn.addEventListener('click', function () { demanderReservation(a.vehicule, debut, fin, a.prix_total, btn, true); });

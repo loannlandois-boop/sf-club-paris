@@ -107,7 +107,6 @@
         var rows = [
           ['Référence', r.reference],
           ['Dates', r.date_debut + (r.heure_debut ? ' ' + r.heure_debut : '') + ' → ' + r.date_fin + (r.heure_fin ? ' ' + r.heure_fin : '')],
-          ['Agence', v.agence_nom || '—'],
           ['Livraison', r.adresse_livraison || '—'],
           ['Vol', r.numero_vol ? r.numero_vol + (r.heure_arrivee_vol ? ' · arrivée ' + r.heure_arrivee_vol : '') + (r.heure_depart_vol ? ' · départ ' + r.heure_depart_vol : '') : '—'],
           ['Montant', fmtPrix(r.prix_total)],

@@ -244,7 +244,7 @@
     function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : '—'; }
 
     function loadReservations() {
-      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele,agence_nom)&order=date_debut.desc')
+      authFetch('/rest/v1/agenda_reservations?select=*,agenda_vehicules(marque,modele)&order=date_debut.desc')
         .then(function (r) { return r ? r.json() : []; })
         .then(function (rows) {
           var box = document.getElementById('resaList');

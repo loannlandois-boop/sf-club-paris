@@ -81,7 +81,17 @@
           <span class="eyebrow">Moteur intelligent</span>
           <h2>Vérifiez la disponibilité &amp; le tarif</h2>
           <p class="muted">Choisissez vos dates : le prix se calcule automatiquement selon la durée. Si le véhicule est déjà réservé, nous vous proposons un équivalent disponible.</p>
-          <p class="muted" style="font-size:.85rem;margin-top:.6rem" id="loginHint">Déjà client SF Club ? <a href="connexion.html" class="gold">Connectez-vous</a> pour cumuler vos points et retrouver vos réservations.</p>
+          <p class="muted" style="font-size:.9rem;margin-top:1rem;display:none" id="loginHint"></p>
+
+          <div id="loginBox" style="margin-top:1rem;max-width:560px">
+            <form id="formInlineLogin" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:16px">
+              <div class="field" style="margin:0;flex:1;min-width:160px"><label for="il-email" style="font-size:.72rem">Email</label><input type="email" id="il-email" required></div>
+              <div class="field" style="margin:0;flex:1;min-width:140px"><label for="il-pass" style="font-size:.72rem">Mot de passe</label><input type="password" id="il-pass" required></div>
+              <button type="submit" class="btn btn--solid">Se connecter</button>
+            </form>
+            <p class="muted" id="inlineLoginError" style="color:#d66;font-size:.8rem;display:none;margin-top:.5rem"></p>
+            <p class="muted" style="font-size:.85rem;margin-top:.6rem">Déjà client SF Club ? Connectez-vous ci-dessus, ou <a href="connexion.html" class="gold">créez un compte</a>.</p>
+          </div>
         </div>
 
         <form class="form-card" id="formDispo">
@@ -256,25 +266,60 @@
     var form = document.getElementById('formDispo');
     if (!form) return;
 
-    // Client déjà connecté ? -> pré-remplit ses infos et le confirme visuellement
+    // ---- Connexion (directement sur la page, sans passer par connexion.html) ----
     (function () {
-      var s = null;
-      try { s = JSON.parse(sessionStorage.getItem('sf_client_session') || 'null'); } catch (e) {}
-      if (!s) return;
-      fetch(SB_URL + '/rest/v1/clients?select=*&limit=1', {
-        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + s.token }
-      }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
-        var c = rows && rows[0];
-        if (!c) return;
-        var civilite = document.getElementById('d-civilite');
-        var nom = document.getElementById('d-nom');
-        var contact = document.getElementById('d-contact');
-        if (civilite && c.civilite) civilite.value = c.civilite;
-        if (nom) nom.value = ((c.prenom || '') + ' ' + (c.nom || '')).trim();
-        if (contact && c.email) contact.value = c.email;
-        var hint = document.getElementById('loginHint');
-        if (hint) hint.innerHTML = 'Bienvenue <b>' + (c.civilite || '') + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
-      }).catch(function () {});
+      var loginBox = document.getElementById('loginBox');
+      var loginHint = document.getElementById('loginHint');
+      var formInline = document.getElementById('formInlineLogin');
+
+      function civiliteLongue(c) { return c === 'Mme' ? 'Madame' : (c === 'M.' ? 'Monsieur' : (c || '')); }
+
+      function setClientSession(s) { try { sessionStorage.setItem('sf_client_session', JSON.stringify(s)); } catch (e) {} }
+      function getClientSession() { try { return JSON.parse(sessionStorage.getItem('sf_client_session') || 'null'); } catch (e) { return null; } }
+
+      function afficherConnecte(c) {
+        loginBox.style.display = 'none';
+        loginHint.style.display = '';
+        var civiliteEl = document.getElementById('d-civilite');
+        var nomEl = document.getElementById('d-nom');
+        var contactEl = document.getElementById('d-contact');
+        if (civiliteEl && c.civilite) civiliteEl.value = c.civilite;
+        if (nomEl) nomEl.value = ((c.prenom || '') + ' ' + (c.nom || '')).trim();
+        if (contactEl && c.email) contactEl.value = c.email;
+        loginHint.innerHTML = 'Bienvenue <b>' + civiliteLongue(c.civilite) + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
+      }
+
+      function chargerProfil(token) {
+        return fetch(SB_URL + '/rest/v1/clients?select=*&limit=1', {
+          headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token }
+        }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+          var c = rows && rows[0];
+          if (c) afficherConnecte(c);
+        });
+      }
+
+      if (formInline) {
+        formInline.addEventListener('submit', function (e) {
+          e.preventDefault();
+          var email = document.getElementById('il-email').value.trim();
+          var pass = document.getElementById('il-pass').value;
+          var err = document.getElementById('inlineLoginError');
+          err.style.display = 'none';
+          fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+            method: 'POST',
+            headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: pass })
+          }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+            .then(function (res) {
+              if (!res.ok) { err.textContent = 'Identifiants incorrects.'; err.style.display = ''; return; }
+              setClientSession({ token: res.d.access_token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
+              chargerProfil(res.d.access_token);
+            }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+        });
+      }
+
+      var s = getClientSession();
+      if (s) chargerProfil(s.token);
     })();
 
     // Pré-remplissage depuis la Collection (?voiture=Marque+Modèle#dispo)

@@ -188,6 +188,12 @@
             },
             body: JSON.stringify({ id: userId, civilite: civilite, prenom: prenom, nom: nom, email: email, telephone: telephone, points: 0 })
           }).then(function () {
+            return fetch(SB_URL + '/functions/v1/client-bienvenue', {
+              method: 'POST',
+              headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ civilite: civilite, prenom: prenom, nom: nom, email: email })
+            }).catch(function () {});
+          }).then(function () {
             window.location.href = 'mon-compte.html';
           }).catch(function () {
             window.location.href = 'mon-compte.html';

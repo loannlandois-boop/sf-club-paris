@@ -30,6 +30,7 @@ create table if not exists public.clients (
   email text,
   telephone text,
   points integer not null default 0,
+  bienvenue_envoye boolean not null default false,
   created_at timestamptz default now()
 );
 alter table public.clients enable row level security;

@@ -81,6 +81,7 @@
           <span class="eyebrow">Moteur intelligent</span>
           <h2>Vérifiez la disponibilité &amp; le tarif</h2>
           <p class="muted">Choisissez vos dates : le prix se calcule automatiquement selon la durée. Si le véhicule est déjà réservé, nous vous proposons un équivalent disponible.</p>
+          <p class="muted" style="font-size:.85rem;margin-top:.6rem" id="loginHint">Déjà client SF Club ? <a href="connexion.html" class="gold">Connectez-vous</a> pour cumuler vos points et retrouver vos réservations.</p>
         </div>
 
         <form class="form-card" id="formDispo">
@@ -254,6 +255,27 @@
     var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
     var form = document.getElementById('formDispo');
     if (!form) return;
+
+    // Client déjà connecté ? -> pré-remplit ses infos et le confirme visuellement
+    (function () {
+      var s = null;
+      try { s = JSON.parse(sessionStorage.getItem('sf_client_session') || 'null'); } catch (e) {}
+      if (!s) return;
+      fetch(SB_URL + '/rest/v1/clients?select=*&limit=1', {
+        headers: { apikey: SB_ANON, Authorization: 'Bearer ' + s.token }
+      }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
+        var c = rows && rows[0];
+        if (!c) return;
+        var civilite = document.getElementById('d-civilite');
+        var nom = document.getElementById('d-nom');
+        var contact = document.getElementById('d-contact');
+        if (civilite && c.civilite) civilite.value = c.civilite;
+        if (nom) nom.value = ((c.prenom || '') + ' ' + (c.nom || '')).trim();
+        if (contact && c.email) contact.value = c.email;
+        var hint = document.getElementById('loginHint');
+        if (hint) hint.innerHTML = 'Connecté en tant que <b>' + (c.prenom || '') + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
+      }).catch(function () {});
+    })();
 
     // Pré-remplissage depuis la Collection (?voiture=Marque+Modèle#dispo)
     (function () {

@@ -156,10 +156,13 @@ create table if not exists public.agenda_reservations (
   lien_paiement text, lien_caution text,
   reference text, paye boolean default false, caution_recue boolean default false,
   paye_at timestamptz, merci_envoye boolean default false,
+  facture_pdf text, facture_url text,
   numero_vol text, heure_arrivee_vol text, heure_depart_vol text,
   statut text default 'confirmee', source text default 'site', notes text,
   created_at timestamptz default now()
 );
+alter table public.agenda_reservations add column if not exists facture_pdf text;
+alter table public.agenda_reservations add column if not exists facture_url text;
 
 create unique index if not exists agenda_reservations_reference_key
   on public.agenda_reservations (reference) where reference is not null;

@@ -1701,7 +1701,7 @@ body::after {
   h2 { font-size: clamp(1.6rem, 7.5vw, 2.3rem); }
   .hero__sub { font-size: 1rem; }
 
-  .gate__logo, .preloader__logo { font-size: clamp(2rem, 13vw, 3rem); }
+  .gate__logo, .preloader__logo { font-size: clamp(1.6rem, 8vw, 2.1rem); }
   .gate__content { padding: 0 22px; }
 
   /* Boutons empilés, pleine largeur */

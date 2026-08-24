@@ -79,6 +79,9 @@ Deno.serve(async (_req) => {
            <p>Nous espérons que vous avez passé un excellent moment au volant de votre <b>${libelle}</b>.</p>
            <p>Toute l'équipe SF Club Paris vous remercie pour votre confiance, et espère vous accueillir à
            nouveau très prochainement.</p>
+           ${r.facture_pdf
+             ? `<div style="margin:20px 0;"><a href="${r.facture_pdf}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Télécharger ma facture (PDF)</a></div>`
+             : (r.facture_url ? `<p><a href="${r.facture_url}" style="color:#0A0A0A;">Consulter ma facture</a></p>` : "")}
            <p style="font-size:13.5px;color:#666;">Une remarque sur votre expérience ? Répondez simplement à
            cet e-mail, nous lisons chaque retour avec attention.</p>
            <p>À très bientôt.</p>`,

@@ -157,22 +157,37 @@
       return { courant: courant, suivant: suivant };
     }
 
+    function afficherProfil(c) {
+      document.getElementById('accWelcome').textContent = 'Bonjour ' + (c.civilite ? c.civilite + ' ' : '') + (c.prenom || '') + ' ' + (c.nom || '');
+      document.getElementById('accPoints').textContent = c.points || 0;
+      var p = palierDe(c.points || 0);
+      document.getElementById('accTier').textContent = p.courant.nom;
+      if (p.suivant) {
+        var pct = Math.min(100, Math.round(((c.points - p.courant.min) / (p.suivant.min - p.courant.min)) * 100));
+        document.getElementById('tierBar').style.width = pct + '%';
+        document.getElementById('tierHint').textContent = (p.suivant.min - c.points) + ' points avant le palier ' + p.suivant.nom;
+      } else {
+        document.getElementById('tierBar').style.width = '100%';
+        document.getElementById('tierHint').textContent = 'Palier maximum atteint';
+      }
+    }
+
     function loadProfil() {
       authFetch('/rest/v1/clients?select=*&limit=1').then(function (r) { return r.json(); }).then(function (rows) {
         var c = rows && rows[0];
-        if (!c) return;
-        document.getElementById('accWelcome').textContent = 'Bonjour ' + (c.civilite ? c.civilite + ' ' : '') + (c.prenom || '') + ' ' + (c.nom || '');
-        document.getElementById('accPoints').textContent = c.points || 0;
-        var p = palierDe(c.points || 0);
-        document.getElementById('accTier').textContent = p.courant.nom;
-        if (p.suivant) {
-          var pct = Math.min(100, Math.round(((c.points - p.courant.min) / (p.suivant.min - p.courant.min)) * 100));
-          document.getElementById('tierBar').style.width = pct + '%';
-          document.getElementById('tierHint').textContent = (p.suivant.min - c.points) + ' points avant le palier ' + p.suivant.nom;
-        } else {
-          document.getElementById('tierBar').style.width = '100%';
-          document.getElementById('tierHint').textContent = 'Palier maximum atteint';
-        }
+        if (c) { afficherProfil(c); return; }
+        // Aucune fiche client (compte créé avant confirmation d'e-mail, etc.) -> on la crée à la volée.
+        return authFetch('/auth/v1/user').then(function (r) { return r.json(); }).then(function (u) {
+          if (!u || !u.id) return;
+          return authFetch('/rest/v1/clients', {
+            method: 'POST',
+            headers: { Prefer: 'return=representation' },
+            body: JSON.stringify({ id: u.id, email: u.email || '', points: 0 })
+          }).then(function (r) { return r.json(); }).then(function (rows2) {
+            var c2 = rows2 && rows2[0];
+            if (c2) afficherProfil(c2);
+          });
+        });
       }).catch(function () {});
     }
 

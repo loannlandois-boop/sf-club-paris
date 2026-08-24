@@ -294,7 +294,21 @@
           headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token }
         }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows) {
           var c = rows && rows[0];
-          if (c) afficherConnecte(c);
+          if (c) { afficherConnecte(c); return; }
+          // Aucune fiche client (compte créé avant confirmation d'e-mail, etc.) -> on la crée à la volée.
+          return fetch(SB_URL + '/auth/v1/user', { headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token } })
+            .then(function (r) { return r.json(); })
+            .then(function (u) {
+              if (!u || !u.id) return;
+              return fetch(SB_URL + '/rest/v1/clients', {
+                method: 'POST',
+                headers: { apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+                body: JSON.stringify({ id: u.id, email: u.email || '', points: 0 })
+              }).then(function (r) { return r.ok ? r.json() : []; }).then(function (rows2) {
+                var c2 = rows2 && rows2[0];
+                if (c2) afficherConnecte(c2);
+              });
+            });
         });
       }
 

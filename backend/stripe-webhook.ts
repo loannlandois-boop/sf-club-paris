@@ -161,8 +161,10 @@ Deno.serve(async (req) => {
                ${pointsTotal != null ? `<p style="font-size:13.5px;color:#666;">+${pointsGagnes} points de fidélité crédités sur votre compte (total : ${pointsTotal} points). <a href="${SITE_URL}/mon-compte.html" style="color:#0A0A0A;">Voir mon compte</a>.</p>` : ""}
                ${facturePdf ? `<div style="margin:20px 0;"><a href="${facturePdf}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Télécharger ma facture (PDF)</a></div>` : ""}
                ${factureUrl && !facturePdf ? `<p><a href="${factureUrl}">Consulter ma facture</a></p>` : ""}
-               <p style="font-size:13.5px;color:#666;">Conservez votre numéro de réservation : il vous permet de retrouver votre réservation
-               à tout moment sur <a href="${SITE_URL}/ma-reservation.html" style="color:#0A0A0A;">ma-reservation.html</a>.</p>
+               <p style="font-size:13.5px;color:#666;">Conservez votre numéro de réservation : il vous permet de retrouver votre réservation à tout moment.</p>
+               <div style="margin:6px 0 22px;">
+                 <a href="${SITE_URL}/ma-reservation.html" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Suivre ma réservation</a>
+               </div>
                <p>Notre équipe se tient à votre disposition pour toute question avant votre départ.</p>
                <p>À très bientôt au volant.</p>`,
             );

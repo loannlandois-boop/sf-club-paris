@@ -224,8 +224,10 @@ Deno.serve(async (req) => {
           <div style="font-size:19px;font-weight:800;letter-spacing:1px;color:#ffffff;margin-top:4px;">${reference}</div>
         </td></tr>
       </table>
-      <p style="font-size:13.5px;color:#666;">Conservez ce numéro : il vous permet de retrouver votre réservation à tout moment sur
-      <a href="${SITE_URL}/ma-reservation.html" style="color:#0A0A0A;">ma-reservation.html</a>.</p>
+      <p style="font-size:13.5px;color:#666;">Conservez ce numéro : il vous permet de retrouver votre réservation à tout moment.</p>
+      <div style="margin:6px 0 22px;">
+        <a href="${SITE_URL}/ma-reservation.html" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Suivre ma réservation</a>
+      </div>
 
       <p>Pour finaliser, merci de nous transmettre <b>par retour de ce mail</b> :</p>
       <ul style="padding-left:20px;color:#333;">

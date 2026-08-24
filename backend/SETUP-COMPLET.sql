@@ -73,7 +73,12 @@ create table if not exists public.staff_users (
 alter table public.staff_users enable row level security;
 
 create or replace function public.is_staff()
-returns boolean language sql stable as $$
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
   select exists (select 1 from public.staff_users where id = auth.uid());
 $$;
 

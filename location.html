@@ -273,7 +273,7 @@
         if (nom) nom.value = ((c.prenom || '') + ' ' + (c.nom || '')).trim();
         if (contact && c.email) contact.value = c.email;
         var hint = document.getElementById('loginHint');
-        if (hint) hint.innerHTML = 'Connecté en tant que <b>' + (c.prenom || '') + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
+        if (hint) hint.innerHTML = 'Bienvenue <b>' + (c.civilite || '') + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
       }).catch(function () {});
     })();
 

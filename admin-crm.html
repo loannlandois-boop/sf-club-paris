@@ -144,16 +144,7 @@
 
         <!-- VISITES -->
         <div class="crm-panel" id="panel-visites">
-          <div class="grid grid--2" style="align-items:start">
-            <div>
-              <h3 style="font-size:1.05rem;margin-bottom:1rem">30 derniers jours</h3>
-              <div id="visJour"><p class="muted">Chargement…</p></div>
-            </div>
-            <div>
-              <h3 style="font-size:1.05rem;margin-bottom:1rem">Pages les plus visitées (30j)</h3>
-              <div id="visPages"><p class="muted">Chargement…</p></div>
-            </div>
-          </div>
+          <p id="visLigne" class="muted" style="font-size:1rem">Chargement…</p>
         </div>
 
         <!-- CLIENTS -->
@@ -306,31 +297,21 @@
 
     // ---- Visites ----
     function chargerVisites() {
-      authFetch('/rest/v1/site_visits?select=path,created_at&order=created_at.desc&limit=5000')
+      authFetch('/rest/v1/site_visits?select=created_at&order=created_at.desc&limit=5000')
         .then(function (r) { return r.json(); }).then(function (rows) {
           rows = rows || [];
           var now = new Date();
-          var parJour = {}, parPage = {};
           var visJour = 0, visMois = 0;
           var todayStr = jourStr(now), moisActuel = moisStr(now);
-          var il30j = new Date(now); il30j.setDate(il30j.getDate() - 30);
           rows.forEach(function (r) {
             var d = new Date(r.created_at);
-            var js = jourStr(d);
-            parJour[js] = (parJour[js] || 0) + 1;
-            if (d >= il30j) parPage[r.path || '?'] = (parPage[r.path || '?'] || 0) + 1;
-            if (js === todayStr) visJour++;
-            if (jourStr(d).slice(0, 7) === moisActuel) visMois++;
+            if (jourStr(d) === todayStr) visJour++;
+            if (moisStr(d) === moisActuel) visMois++;
           });
           document.getElementById('kpiVisJour').textContent = visJour;
           document.getElementById('kpiVisMois').textContent = visMois;
-
-          var jours = [];
-          for (var i = 29; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var js = jourStr(d); jours.push({ lbl: js.slice(5), val: parJour[js] || 0 }); }
-          barListe(document.getElementById('visJour'), jours, function (v) { return v; });
-
-          var pages = Object.keys(parPage).map(function (p) { return { lbl: p, val: parPage[p] }; }).sort(function (a, b) { return b.val - a.val; }).slice(0, 12);
-          barListe(document.getElementById('visPages'), pages, function (v) { return v; });
+          document.getElementById('visLigne').textContent =
+            visJour + ' visite(s) aujourd\'hui · ' + visMois + ' ce mois-ci · ' + rows.length + ' au total (site public uniquement).';
         }).catch(function () {});
     }
 

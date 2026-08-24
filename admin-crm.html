@@ -111,6 +111,7 @@
             </div>
             <div class="field" style="margin-top:20px"><label for="t-desc">Description</label><textarea id="t-desc"></textarea></div>
             <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Ajouter la tâche</button>
+            <p class="muted" id="tacheError" style="color:#d66;font-size:.85rem;display:none;margin-top:1rem"></p>
           </form>
           <div class="section-head"><h3 style="font-size:1.3rem">À faire</h3></div>
           <div id="tachesOuvertes"><p class="muted">Chargement…</p></div>
@@ -413,10 +414,21 @@
       var priorite = document.getElementById('t-priorite').value;
       var echeance = document.getElementById('t-echeance').value || null;
       var desc = document.getElementById('t-desc').value.trim();
+      var err = document.getElementById('tacheError');
+      err.style.display = 'none';
       authFetch('/rest/v1/taches', {
         method: 'POST', headers: { Prefer: 'return=minimal' },
         body: JSON.stringify({ titre: titre, priorite: priorite, echeance: echeance, description: desc, origine: 'manuelle' })
-      }).then(function () { document.getElementById('formTache').reset(); chargerTaches(); });
+      }).then(function (r) {
+        if (!r || !r.ok) {
+          return (r ? r.text() : Promise.resolve('erreur inconnue')).then(function (t) {
+            err.textContent = 'Erreur : ' + t;
+            err.style.display = '';
+          });
+        }
+        document.getElementById('formTache').reset();
+        chargerTaches();
+      }).catch(function (e2) { err.textContent = 'Erreur : ' + e2; err.style.display = ''; });
     });
 
     function chargerTout() {

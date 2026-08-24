@@ -11,6 +11,21 @@
 (function () {
   'use strict';
 
+  /* -------- -1. Compteur de visite (anonyme, sans cookie) -------- */
+  function trackVisite() {
+    try {
+      fetch('https://cuohpntjpkpwvhspzads.supabase.co/rest/v1/site_visits', {
+        method: 'POST',
+        headers: {
+          apikey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ',
+          Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ',
+          'Content-Type': 'application/json', Prefer: 'return=minimal'
+        },
+        body: JSON.stringify({ path: location.pathname.split('/').pop() || 'index.html' })
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   /* -------- 0. Préloader (écran de chargement animé) -------- */
   function initPreloader() {
     var pl = document.getElementById('preloader');
@@ -476,6 +491,7 @@
 
   /* -------- Init -------- */
   document.addEventListener('DOMContentLoaded', function () {
+    trackVisite();
     initGate();
     initPreloader();
     initCatalogue();

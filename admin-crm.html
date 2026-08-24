@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRM — SF CLUB PARIS</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230A0A0A'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='14' font-weight='700' fill='%23FFFFFF' text-anchor='middle'%3ESF%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .kpi-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); margin-bottom:2px; }
+    .kpi { background:#0A0A0A; padding:1.4rem 1.2rem; }
+    .kpi .n { font-family:var(--serif); font-weight:800; font-size:1.9rem; color:#fff; line-height:1; }
+    .kpi .lbl { font-size:.68rem; letter-spacing:.15em; text-transform:uppercase; color:#999; margin-top:6px; }
+    .datatable { width:100%; border-collapse:collapse; font-size:.86rem; }
+    .datatable th, .datatable td { text-align:left; padding:.6em .8em; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .datatable th { color:var(--text-muted); font-weight:600; font-size:.72rem; letter-spacing:.08em; text-transform:uppercase; }
+    .datatable tbody tr:hover { background:rgba(255,255,255,.03); }
+    .table-scroll { overflow-x:auto; border:1px solid var(--border); }
+    .bar-row { display:flex; align-items:center; gap:10px; padding:.35em 0; font-size:.82rem; }
+    .bar-row .lbl2 { min-width:90px; color:var(--text-muted); }
+    .bar-row .bar { flex:1; height:8px; background:rgba(255,255,255,.08); position:relative; }
+    .bar-row .bar span { display:block; height:100%; background:var(--gold); }
+    .bar-row .val { min-width:80px; text-align:right; }
+    .tache-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; padding:1rem 1.2rem; border:1px solid var(--border); border-top:none; font-size:.9rem; }
+    .tache-row:first-of-type { border-top:1px solid var(--border); }
+    .tache-row.is-urgente { border-left:3px solid #c0453a; }
+    .tache-tag { font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; padding:.25em .6em; border:1px solid var(--border); }
+    .tache-tag--auto { color:var(--gold); border-color:var(--gold); }
+    .tabs2 { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1.6rem; }
+    .tabs2 button { background:none; border:1px solid var(--border); color:var(--text-muted); padding:.5em 1.1em; font-size:.8rem; letter-spacing:.05em; cursor:pointer; font-family:inherit; }
+    .tabs2 button.is-active { background:var(--gold); border-color:var(--gold); color:#0A0A0A; }
+    .crm-panel { display:none; }
+    .crm-panel.is-active { display:block; }
+    #crmDash { display:none; }
+  </style>
+</head>
+<body>
+
+  <div class="preloader" id="preloader" aria-hidden="true">
+    <div class="preloader__inner">
+      <div class="preloader__logo">SF&nbsp;CLUB<span>.PARIS</span></div>
+      <div class="preloader__line"><span></span></div>
+      <div class="preloader__tag">Club Automobile Privé</div>
+    </div>
+  </div>
+
+  <header class="nav">
+    <div class="container nav__inner">
+      <a href="index.html" class="logo">SF&nbsp;CLUB<span>.PARIS</span></a>
+      <nav><ul class="nav__menu"><li><a href="admin-agenda.html">Agenda</a></li><li><a href="index.html">Site public</a></li></ul></nav>
+      <div class="nav__actions"><button class="btn btn--solid nav__cta" id="btnLogout" style="display:none">Déconnexion</button></div>
+      <button class="nav__toggle" aria-label="Menu" aria-expanded="false"><span></span></button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===== LOGIN ===== -->
+    <section class="club-login" id="crmLogin">
+      <div class="container" style="max-width:440px">
+        <div class="center" style="margin-bottom:30px">
+          <span class="eyebrow reveal">Réservé à l'équipe</span>
+          <h1 class="reveal" data-delay="1" style="font-size:clamp(2.4rem,7vw,3.2rem)">CRM SF</h1>
+          <p class="muted reveal" data-delay="2">Connexion avec votre compte équipe (le même que pour l'agenda).</p>
+        </div>
+        <form class="form-card" id="formCrmLogin">
+          <div class="field"><label for="cr-email">Email</label><input type="email" id="cr-email" autocomplete="username" required></div>
+          <div class="field"><label for="cr-pass">Mot de passe</label><input type="password" id="cr-pass" autocomplete="current-password" required></div>
+          <p class="muted" id="crmLoginError" style="color:#d66;font-size:.85rem;display:none"></p>
+          <button type="submit" class="btn btn--solid btn--lg btn--block">Se connecter</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="section" id="crmDash">
+      <div class="container">
+
+        <div class="section-head">
+          <span class="eyebrow">Vue d'ensemble</span>
+          <h2>Console CRM</h2>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi"><div class="n" id="kpiCaJour">—</div><div class="lbl">CA aujourd'hui</div></div>
+          <div class="kpi"><div class="n" id="kpiCaMois">—</div><div class="lbl">CA ce mois</div></div>
+          <div class="kpi"><div class="n" id="kpiCaAnnee">—</div><div class="lbl">CA cette année</div></div>
+          <div class="kpi"><div class="n" id="kpiVisJour">—</div><div class="lbl">Visites aujourd'hui</div></div>
+          <div class="kpi"><div class="n" id="kpiVisMois">—</div><div class="lbl">Visites ce mois</div></div>
+          <div class="kpi"><div class="n" id="kpiClients">—</div><div class="lbl">Comptes clients</div></div>
+        </div>
+
+        <div class="tabs2">
+          <button class="is-active" data-panel="taches">Tâches</button>
+          <button data-panel="revenus">Paiements</button>
+          <button data-panel="visites">Visites du site</button>
+          <button data-panel="clients">Clients</button>
+        </div>
+
+        <!-- TÂCHES -->
+        <div class="crm-panel is-active" id="panel-taches">
+          <form class="form-card" id="formTache" style="max-width:700px;margin-bottom:2rem">
+            <div class="form-grid">
+              <div class="field"><label for="t-titre">Titre</label><input type="text" id="t-titre" required></div>
+              <div class="field"><label for="t-priorite">Priorité</label><select id="t-priorite"><option value="normale">Normale</option><option value="urgente">Urgente</option></select></div>
+              <div class="field"><label for="t-echeance">Échéance (optionnel)</label><input type="date" id="t-echeance"></div>
+            </div>
+            <div class="field" style="margin-top:20px"><label for="t-desc">Description</label><textarea id="t-desc"></textarea></div>
+            <button type="submit" class="btn btn--solid btn--lg btn--block" style="margin-top:8px">Ajouter la tâche</button>
+          </form>
+          <div class="section-head"><h3 style="font-size:1.3rem">À faire</h3></div>
+          <div id="tachesOuvertes"><p class="muted">Chargement…</p></div>
+          <div class="section-head" style="margin-top:2.4rem"><h3 style="font-size:1.1rem;color:var(--text-muted)">Terminées récemment</h3></div>
+          <div id="tachesFaites"><p class="muted">Chargement…</p></div>
+        </div>
+
+        <!-- PAIEMENTS -->
+        <div class="crm-panel" id="panel-revenus">
+          <div class="grid grid--3" style="align-items:start">
+            <div>
+              <h3 style="font-size:1.05rem;margin-bottom:1rem">30 derniers jours</h3>
+              <div id="revJour"><p class="muted">Chargement…</p></div>
+            </div>
+            <div>
+              <h3 style="font-size:1.05rem;margin-bottom:1rem">12 derniers mois</h3>
+              <div id="revMois"><p class="muted">Chargement…</p></div>
+            </div>
+            <div>
+              <h3 style="font-size:1.05rem;margin-bottom:1rem">Par année</h3>
+              <div id="revAnnee"><p class="muted">Chargement…</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VISITES -->
+        <div class="crm-panel" id="panel-visites">
+          <div class="grid grid--2" style="align-items:start">
+            <div>
+              <h3 style="font-size:1.05rem;margin-bottom:1rem">30 derniers jours</h3>
+              <div id="visJour"><p class="muted">Chargement…</p></div>
+            </div>
+            <div>
+              <h3 style="font-size:1.05rem;margin-bottom:1rem">Pages les plus visitées (30j)</h3>
+              <div id="visPages"><p class="muted">Chargement…</p></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CLIENTS -->
+        <div class="crm-panel" id="panel-clients">
+          <div class="field" style="max-width:360px;margin-bottom:1.4rem"><input type="text" id="clientSearch" placeholder="Rechercher un client (nom, email)…"></div>
+          <div class="table-scroll">
+            <table class="datatable" id="clientsTable">
+              <thead><tr><th>Client</th><th>Contact</th><th>Points</th><th>Palier</th><th>Réservations</th><th>Total dépensé</th><th>Inscrit le</th></tr></thead>
+              <tbody id="clientsBody"><tr><td colspan="7" class="muted">Chargement…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__bottom" style="border-top:0;justify-content:center">
+        <span>© 2025 SF CLUB PARIS. Tous droits réservés.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+  <script>
+  (function () {
+    var SB_URL = 'https://cuohpntjpkpwvhspzads.supabase.co';
+    var SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN1b2hwbnRqcGtwd3Zoc3B6YWRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzMxMzgsImV4cCI6MjEwMjgwOTEzOH0.gAEYzBI0FMi63PjC3TRLvseirT-piMdwzriAYnt9PJQ';
+
+    function getSession() { try { return JSON.parse(sessionStorage.getItem('sf_agenda_session') || 'null'); } catch (e) { return null; } }
+    function setSession(s) { try { sessionStorage.setItem('sf_agenda_session', JSON.stringify(s)); } catch (e) {} }
+    function clearSession() { try { sessionStorage.removeItem('sf_agenda_session'); } catch (e) {} }
+
+    function showLogin() {
+      document.getElementById('crmLogin').style.display = '';
+      document.getElementById('crmDash').style.display = 'none';
+      document.getElementById('btnLogout').style.display = 'none';
+    }
+    function showDash() {
+      document.getElementById('crmLogin').style.display = 'none';
+      document.getElementById('crmDash').style.display = 'block';
+      document.getElementById('btnLogout').style.display = '';
+      chargerTout();
+    }
+
+    var formLogin = document.getElementById('formCrmLogin');
+    formLogin.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var email = document.getElementById('cr-email').value.trim();
+      var pass = document.getElementById('cr-pass').value;
+      var err = document.getElementById('crmLoginError');
+      err.style.display = 'none';
+      fetch(SB_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, password: pass })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { err.textContent = 'Identifiants incorrects.'; err.style.display = ''; return; }
+          setSession({ token: res.d.access_token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
+          showDash();
+        }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+    });
+    document.getElementById('btnLogout').addEventListener('click', function () { clearSession(); showLogin(); });
+
+    function authFetch(path, opts) {
+      opts = opts || {};
+      var s = getSession();
+      if (!s) return Promise.reject('no session');
+      function withToken(token) {
+        var headers = Object.assign({ apikey: SB_ANON, Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' }, opts.headers || {});
+        return fetch(SB_URL + path, Object.assign({}, opts, { headers: headers }));
+      }
+      if (Date.now() < s.exp - 5000) return withToken(s.token);
+      return fetch(SB_URL + '/auth/v1/token?grant_type=refresh_token', {
+        method: 'POST', headers: { apikey: SB_ANON, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: s.refresh })
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (!d.access_token) { clearSession(); showLogin(); return Promise.reject('session expiree'); }
+        setSession({ token: d.access_token, refresh: d.refresh_token, exp: Date.now() + (d.expires_in || 3600) * 1000 });
+        return withToken(d.access_token);
+      });
+    }
+
+    // ---- Onglets ----
+    document.querySelectorAll('.tabs2 button').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('.tabs2 button').forEach(function (x) { x.classList.remove('is-active'); });
+        document.querySelectorAll('.crm-panel').forEach(function (x) { x.classList.remove('is-active'); });
+        b.classList.add('is-active');
+        document.getElementById('panel-' + b.dataset.panel).classList.add('is-active');
+      });
+    });
+
+    function fmtEuro(n) { return Math.round(n || 0).toLocaleString('fr-FR') + ' €'; }
+    function jourStr(d) { return d.toISOString().slice(0, 10); }
+    function moisStr(d) { return d.toISOString().slice(0, 7); }
+
+    function barListe(container, rows, formatVal) {
+      container.innerHTML = '';
+      if (!rows.length) { container.innerHTML = '<p class="muted">Aucune donnée.</p>'; return; }
+      var max = Math.max.apply(null, rows.map(function (r) { return r.val; })) || 1;
+      rows.forEach(function (r) {
+        var row = document.createElement('div');
+        row.className = 'bar-row';
+        row.innerHTML = '<span class="lbl2">' + r.lbl + '</span><span class="bar"><span style="width:' + Math.round((r.val / max) * 100) + '%"></span></span><span class="val">' + formatVal(r.val) + '</span>';
+        container.appendChild(row);
+      });
+    }
+
+    // ---- Paiements + KPI CA ----
+    function chargerPaiements() {
+      authFetch('/rest/v1/agenda_reservations?select=prix_total,paye_at,created_at&paye=eq.true&order=created_at.desc&limit=3000')
+        .then(function (r) { return r.json(); }).then(function (rows) {
+          rows = rows || [];
+          var now = new Date();
+          var parJour = {}, parMois = {}, parAnnee = {};
+          var caJour = 0, caMois = 0, caAnnee = 0;
+          var todayStr = jourStr(now), moisActuel = moisStr(now), anneeActuelle = String(now.getFullYear());
+          rows.forEach(function (r) {
+            var d = new Date(r.paye_at || r.created_at);
+            var js = jourStr(d), ms = moisStr(d), as = String(d.getFullYear());
+            var montant = Number(r.prix_total) || 0;
+            parJour[js] = (parJour[js] || 0) + montant;
+            parMois[ms] = (parMois[ms] || 0) + montant;
+            parAnnee[as] = (parAnnee[as] || 0) + montant;
+            if (js === todayStr) caJour += montant;
+            if (ms === moisActuel) caMois += montant;
+            if (as === anneeActuelle) caAnnee += montant;
+          });
+          document.getElementById('kpiCaJour').textContent = fmtEuro(caJour);
+          document.getElementById('kpiCaMois').textContent = fmtEuro(caMois);
+          document.getElementById('kpiCaAnnee').textContent = fmtEuro(caAnnee);
+
+          var jours = [];
+          for (var i = 29; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var js = jourStr(d); jours.push({ lbl: js.slice(5), val: parJour[js] || 0 }); }
+          barListe(document.getElementById('revJour'), jours, fmtEuro);
+
+          var mois = [];
+          for (var i2 = 11; i2 >= 0; i2--) { var d2 = new Date(now.getFullYear(), now.getMonth() - i2, 1); var ms2 = moisStr(d2); mois.push({ lbl: ms2, val: parMois[ms2] || 0 }); }
+          barListe(document.getElementById('revMois'), mois, fmtEuro);
+
+          var annees = Object.keys(parAnnee).sort();
+          barListe(document.getElementById('revAnnee'), annees.map(function (a) { return { lbl: a, val: parAnnee[a] }; }), fmtEuro);
+        }).catch(function () {});
+    }
+
+    // ---- Visites ----
+    function chargerVisites() {
+      authFetch('/rest/v1/site_visits?select=path,created_at&order=created_at.desc&limit=5000')
+        .then(function (r) { return r.json(); }).then(function (rows) {
+          rows = rows || [];
+          var now = new Date();
+          var parJour = {}, parPage = {};
+          var visJour = 0, visMois = 0;
+          var todayStr = jourStr(now), moisActuel = moisStr(now);
+          var il30j = new Date(now); il30j.setDate(il30j.getDate() - 30);
+          rows.forEach(function (r) {
+            var d = new Date(r.created_at);
+            var js = jourStr(d);
+            parJour[js] = (parJour[js] || 0) + 1;
+            if (d >= il30j) parPage[r.path || '?'] = (parPage[r.path || '?'] || 0) + 1;
+            if (js === todayStr) visJour++;
+            if (jourStr(d).slice(0, 7) === moisActuel) visMois++;
+          });
+          document.getElementById('kpiVisJour').textContent = visJour;
+          document.getElementById('kpiVisMois').textContent = visMois;
+
+          var jours = [];
+          for (var i = 29; i >= 0; i--) { var d = new Date(now); d.setDate(d.getDate() - i); var js = jourStr(d); jours.push({ lbl: js.slice(5), val: parJour[js] || 0 }); }
+          barListe(document.getElementById('visJour'), jours, function (v) { return v; });
+
+          var pages = Object.keys(parPage).map(function (p) { return { lbl: p, val: parPage[p] }; }).sort(function (a, b) { return b.val - a.val; }).slice(0, 12);
+          barListe(document.getElementById('visPages'), pages, function (v) { return v; });
+        }).catch(function () {});
+    }
+
+    // ---- Clients (CRM) ----
+    var clientsCache = [];
+    function chargerClients() {
+      Promise.all([
+        authFetch('/rest/v1/clients?select=*&order=created_at.desc').then(function (r) { return r.json(); }),
+        authFetch('/rest/v1/agenda_reservations?select=client_id,prix_total,paye').then(function (r) { return r.json(); })
+      ]).then(function (res) {
+        var clients = res[0] || [], resas = res[1] || [];
+        document.getElementById('kpiClients').textContent = clients.length;
+        var parClient = {};
+        resas.forEach(function (r) {
+          if (!r.client_id) return;
+          if (!parClient[r.client_id]) parClient[r.client_id] = { nb: 0, total: 0 };
+          parClient[r.client_id].nb++;
+          if (r.paye) parClient[r.client_id].total += Number(r.prix_total) || 0;
+        });
+        clientsCache = clients.map(function (c) {
+          var agg = parClient[c.id] || { nb: 0, total: 0 };
+          var palier = c.points >= 1000 ? 'Or' : (c.points >= 300 ? 'Argent' : 'Bronze');
+          return {
+            nom: ((c.civilite || '') + ' ' + (c.prenom || '') + ' ' + (c.nom || '')).trim() || '—',
+            contact: [c.email, c.telephone].filter(Boolean).join(' · ') || '—',
+            points: c.points || 0, palier: palier, nb: agg.nb, total: agg.total,
+            inscrit: c.created_at ? c.created_at.slice(0, 10) : '—',
+            recherche: ((c.prenom || '') + ' ' + (c.nom || '') + ' ' + (c.email || '')).toLowerCase()
+          };
+        });
+        renderClients(clientsCache);
+      }).catch(function () {});
+    }
+    function renderClients(list) {
+      var body = document.getElementById('clientsBody');
+      body.innerHTML = '';
+      if (!list.length) { body.innerHTML = '<tr><td colspan="7" class="muted">Aucun client.</td></tr>'; return; }
+      list.forEach(function (c) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + c.nom + '</td><td>' + c.contact + '</td><td>' + c.points + '</td><td>' + c.palier + '</td><td>' + c.nb + '</td><td>' + fmtEuro(c.total) + '</td><td>' + c.inscrit + '</td>';
+        body.appendChild(tr);
+      });
+    }
+    document.getElementById('clientSearch').addEventListener('input', function () {
+      var q = this.value.trim().toLowerCase();
+      renderClients(q ? clientsCache.filter(function (c) { return c.recherche.indexOf(q) !== -1; }) : clientsCache);
+    });
+
+    // ---- Tâches ----
+    function chargerTaches() {
+      authFetch('/rest/v1/taches?select=*&statut=eq.a_faire&order=priorite.desc,created_at.asc')
+        .then(function (r) { return r.json(); }).then(function (rows) { renderTaches(rows || [], 'tachesOuvertes', true); }).catch(function () {});
+      authFetch('/rest/v1/taches?select=*&statut=eq.fait&order=termine_at.desc&limit=20')
+        .then(function (r) { return r.json(); }).then(function (rows) { renderTaches(rows || [], 'tachesFaites', false); }).catch(function () {});
+    }
+    function renderTaches(rows, containerId, actionable) {
+      var box = document.getElementById(containerId);
+      box.innerHTML = '';
+      if (!rows.length) { box.innerHTML = '<p class="muted">Rien ici.</p>'; return; }
+      rows.forEach(function (t) {
+        var row = document.createElement('div');
+        row.className = 'tache-row' + (t.priorite === 'urgente' ? ' is-urgente' : '');
+        row.innerHTML =
+          '<div><b>' + t.titre + '</b>' +
+          (t.description ? '<span class="muted" style="display:block;font-size:.82rem;margin-top:3px;max-width:520px">' + t.description + '</span>' : '') +
+          (t.echeance ? '<span class="muted" style="display:block;font-size:.78rem;margin-top:3px">Échéance : ' + t.echeance + '</span>' : '') +
+          '</div>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+          (t.origine === 'auto' ? '<span class="tache-tag tache-tag--auto">Auto</span>' : '') +
+          (actionable ? '<button type="button" class="btn" data-done="' + t.id + '">Terminé</button>' : '<span class="tache-tag">Fait</span>') +
+          '</div>';
+        box.appendChild(row);
+      });
+      box.querySelectorAll('[data-done]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          authFetch('/rest/v1/taches?id=eq.' + btn.dataset.done, {
+            method: 'PATCH', headers: { Prefer: 'return=minimal' },
+            body: JSON.stringify({ statut: 'fait', termine_at: new Date().toISOString() })
+          }).then(function () { chargerTaches(); });
+        });
+      });
+    }
+    document.getElementById('formTache').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var titre = document.getElementById('t-titre').value.trim();
+      var priorite = document.getElementById('t-priorite').value;
+      var echeance = document.getElementById('t-echeance').value || null;
+      var desc = document.getElementById('t-desc').value.trim();
+      authFetch('/rest/v1/taches', {
+        method: 'POST', headers: { Prefer: 'return=minimal' },
+        body: JSON.stringify({ titre: titre, priorite: priorite, echeance: echeance, description: desc, origine: 'manuelle' })
+      }).then(function () { document.getElementById('formTache').reset(); chargerTaches(); });
+    });
+
+    function chargerTout() {
+      chargerPaiements();
+      chargerVisites();
+      chargerClients();
+      chargerTaches();
+    }
+
+    var s = getSession();
+    if (s) showDash(); else showLogin();
+  })();
+  </script>
+</body>
+</html>

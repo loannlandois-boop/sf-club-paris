@@ -373,7 +373,7 @@
     function fmtPrix(n) { return n != null ? Number(n).toLocaleString('fr-FR') + ' €' : 'sur devis'; }
     function val(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; }
 
-    function demanderReservation(vehicule, debut, fin, prixTotal, btn) {
+    function demanderReservation(vehicule, debut, fin, prixTotal, btn, estAlternative) {
       var payload = {
         vehicule_id: vehicule.id || null,
         marque: vehicule.marque, modele: vehicule.modele, agence_nom: vehicule.agence_nom || '',
@@ -384,6 +384,11 @@
         prix_total: prixTotal,
         civilite: val('d-civilite'), nom: val('d-nom'), contact: val('d-contact')
       };
+      if (estAlternative) {
+        payload.est_alternative = true;
+        payload.marque_originale = val('d-marque');
+        payload.modele_originale = val('d-modele');
+      }
       if (btn) { btn.disabled = true; btn.textContent = 'Envoi…'; }
       fetch(SB_URL + '/functions/v1/agenda-request', {
         method: 'POST',
@@ -425,7 +430,7 @@
           span.innerHTML = '<b>' + a.vehicule.marque + ' ' + a.vehicule.modele + '</b> · ' + (a.vehicule.agence_nom || '—') + ' · ' + fmtPrix(a.prix_total);
           var btn = document.createElement('button');
           btn.type = 'button'; btn.className = 'btn'; btn.textContent = 'Demander celle-ci';
-          btn.addEventListener('click', function () { demanderReservation(a.vehicule, debut, fin, a.prix_total, btn); });
+          btn.addEventListener('click', function () { demanderReservation(a.vehicule, debut, fin, a.prix_total, btn, true); });
           li.appendChild(span); li.appendChild(btn);
           list.appendChild(li);
         });

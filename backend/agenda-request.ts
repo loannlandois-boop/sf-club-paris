@@ -5,6 +5,12 @@
 // véhicule — seule une validation par l'équipe, via admin-agenda.html, la
 // passe en "confirmee" et bloque réellement les dates) + envoie l'e-mail
 // interne de notification et la confirmation au client.
+// Crée aussi une tâche automatique (table taches) :
+//  - si la demande arrive hors horaires (22h-8h, heure de Paris) : tâche
+//    urgente, personne n'a pu valider tout de suite
+//  - si le client a demandé une ALTERNATIVE (son véhicule initial n'était
+//    pas disponible, body.est_alternative=true) : tâche pour lui trouver
+//    un équivalent encore plus proche / vérifier sa satisfaction
 // Secrets requis : SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (auto),
 //                  RESEND_API_KEY, SFMATCH_INTERNAL_EMAIL, SFMATCH_FROM
 // ============================================================
@@ -61,6 +67,11 @@ async function email(to: string, subject: string, bodyHtml: string) {
     headers: { Authorization: `Bearer ${RESEND}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from: FROM, to, subject, html: emailShell(bodyHtml) }),
   });
+}
+
+function heureParis(): number {
+  const fmt = new Intl.DateTimeFormat("fr-FR", { timeZone: "Europe/Paris", hour: "2-digit", hour12: false });
+  return parseInt(fmt.format(new Date()), 10);
 }
 
 Deno.serve(async (req) => {
@@ -134,6 +145,31 @@ Deno.serve(async (req) => {
          <p>Nous avons bien reçu votre demande pour <b>${libelleVehicule}</b>, du ${date_debut} au ${date_fin}.</p>
          <p>Un conseiller SF Club Paris valide votre réservation sous peu et revient vers vous.</p>`,
       );
+    }
+
+    // ---- Tâches automatiques ----
+    const heure = heureParis();
+    if (heure >= 22 || heure < 8) {
+      await sb.from("taches").insert({
+        titre: `Valider en urgence — demande reçue de nuit (${libelleVehicule})`,
+        description: `Demande de ${civilite ? civilite + " " : ""}${nom} (${contact}) pour ${libelleVehicule}, du ${date_debut} au ${date_fin}. Reçue vers ${heure}h (heure de Paris), hors horaires — personne n'a pu la valider immédiatement.`,
+        priorite: "urgente",
+        origine: "auto",
+        reservation_id: data?.id ?? null,
+      });
+    }
+
+    if (b.est_alternative) {
+      const original = (b.marque_originale || b.modele_originale)
+        ? `${b.marque_originale || ""} ${b.modele_originale || ""}`.trim()
+        : "un autre véhicule";
+      await sb.from("taches").insert({
+        titre: `Trouver un équivalent — ${nom} n'a pas eu son véhicule initial`,
+        description: `${civilite ? civilite + " " : ""}${nom} souhaitait initialement ${original} (indisponible aux dates demandées) et a finalement demandé ${libelleVehicule} à la place. Vérifier sa satisfaction ou lui proposer un équivalent encore plus proche si possible. Contact : ${contact}.`,
+        priorite: "normale",
+        origine: "auto",
+        reservation_id: data?.id ?? null,
+      });
     }
 
     return new Response(JSON.stringify({ ok: true, id: data?.id }), { headers: CORS });

@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
             factureUrl = fac?.hosted_invoice_url || null;
           }
 
-          await sb.from("agenda_reservations").update({ paye: true }).eq("id", resId);
+          await sb.from("agenda_reservations").update({ paye: true, paye_at: new Date().toISOString() }).eq("id", resId);
 
           // Points de fidélité : si l'e-mail du client correspond à un compte SF Club,
           // on lie la réservation à son compte et on crédite 1 point par 10 € dépensés.

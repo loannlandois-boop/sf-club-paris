@@ -112,6 +112,10 @@ create table if not exists public.staff_users (
 alter table public.staff_users enable row level security;
 alter table public.staff_users add column if not exists email text;
 alter table public.staff_users add column if not exists nom text;
+alter table public.staff_users add column if not exists prenom text;
+alter table public.staff_users add column if not exists civilite text;
+alter table public.staff_users add column if not exists telephone text;
+alter table public.staff_users add column if not exists is_admin boolean not null default false;
 alter table public.staff_users add column if not exists created_at timestamptz not null default now();
 drop policy if exists "staff lecture equipe" on public.staff_users;
 create policy "staff lecture equipe" on public.staff_users for select to authenticated using (is_staff());
@@ -125,6 +129,22 @@ stable
 as $$
   select exists (select 1 from public.staff_users where id = auth.uid());
 $$;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (select 1 from public.staff_users where id = auth.uid() and is_admin = true);
+$$;
+
+-- Le tout premier compte équipe créé (avant l'existence du système d'invitation)
+-- devient automatiquement administrateur, s'il n'y a pas encore d'admin.
+update public.staff_users set is_admin = true
+where id = (select id from public.staff_users order by created_at asc limit 1)
+and not exists (select 1 from public.staff_users where is_admin = true);
 
 create table if not exists public.clients (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -205,17 +225,25 @@ create table if not exists public.taches (
   priorite text not null default 'normale',    -- normale | urgente
   origine text not null default 'manuelle',    -- manuelle | auto
   reservation_id bigint references public.agenda_reservations(id) on delete set null,
+  assigne_a uuid references public.staff_users(id) on delete set null,
   echeance date,
   created_at timestamptz default now(),
   termine_at timestamptz
 );
+alter table public.taches add column if not exists assigne_a uuid references public.staff_users(id) on delete set null;
 alter table public.taches enable row level security;
 drop policy if exists "taches lecture equipe" on public.taches;
 drop policy if exists "taches creation equipe" on public.taches;
 drop policy if exists "taches maj equipe" on public.taches;
-create policy "taches lecture equipe" on public.taches for select to authenticated using (is_staff());
+-- Chacun voit les tâches non assignées (tout le monde) + les siennes ;
+-- l'administrateur voit tout, pour garder une vue d'ensemble.
+create policy "taches lecture equipe" on public.taches for select to authenticated using (
+  is_admin() or assigne_a is null or assigne_a = auth.uid()
+);
 create policy "taches creation equipe" on public.taches for insert to authenticated with check (is_staff());
-create policy "taches maj equipe" on public.taches for update to authenticated using (is_staff());
+create policy "taches maj equipe" on public.taches for update to authenticated using (
+  is_admin() or assigne_a is null or assigne_a = auth.uid()
+);
 
 create table if not exists public.site_visits (
   id bigint generated always as identity primary key,

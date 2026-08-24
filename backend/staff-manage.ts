@@ -1,13 +1,10 @@
 // ============================================================
-// SF CLUB PARIS — Edge Function "staff-invite"
-// Appelée depuis le CRM interne (onglet "Équipe") par un ADMINISTRATEUR
-// déjà connecté, pour créer le compte d'un nouveau collègue.
-// Vérifie d'abord que l'appelant est bien administrateur (is_admin())
-// avant de créer quoi que ce soit — sinon n'importe quel membre de
-// l'équipe pourrait créer des comptes équipe librement.
-// Crée le compte Supabase Auth (mot de passe temporaire), l'ajoute à
-// staff_users avec ses infos, puis envoie ce mot de passe par e-mail
-// au nouveau membre.
+// SF CLUB PARIS — Edge Function "staff-manage"
+// Appelée depuis le CRM interne (onglet "Équipe") par l'ADMINISTRATEUR
+// pour réinitialiser le mot de passe d'un collègue ou supprimer son
+// compte (comme un admin Google Workspace). Réservé à is_admin() —
+// vérifié à chaque appel avant toute action.
+// Corps attendu : { action: "reset" | "delete", staff_id: "<uuid>" }
 // Secrets requis : SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 //                  (tous automatiques), RESEND_API_KEY, SFMATCH_FROM
 // ============================================================
@@ -78,70 +75,57 @@ Deno.serve(async (req) => {
     if (!jwt) return new Response(JSON.stringify({ error: "Non autorisé" }), { status: 401, headers: CORS });
 
     const sbCaller = createClient(SUPABASE_URL, ANON_KEY, { global: { headers: { Authorization: `Bearer ${jwt}` } } });
+    const { data: caller } = await sbCaller.auth.getUser();
     const { data: isAdmin, error: staffErr } = await sbCaller.rpc("is_admin");
     if (staffErr || !isAdmin) {
       return new Response(JSON.stringify({ error: "Réservé à l'administrateur SF Club Paris." }), { status: 403, headers: CORS });
     }
 
     const b = await req.json();
-    const emailAdresse = String(b.email || "").trim().toLowerCase();
-    const nom = String(b.nom || "").trim();
-    const prenom = String(b.prenom || "").trim();
-    const civilite = String(b.civilite || "").trim();
-    const telephone = String(b.telephone || "").trim();
-    if (!emailAdresse || !emailAdresse.includes("@")) {
-      return new Response(JSON.stringify({ error: "Adresse e-mail invalide." }), { status: 400, headers: CORS });
+    const action = String(b.action || "");
+    const staffId = String(b.staff_id || "");
+    if (!staffId) return new Response(JSON.stringify({ error: "Membre manquant." }), { status: 400, headers: CORS });
+    if (caller?.user && staffId === caller.user.id) {
+      return new Response(JSON.stringify({ error: "Impossible d'agir sur votre propre compte depuis cet écran." }), { status: 400, headers: CORS });
     }
 
-    const tempPassword = genTempPassword();
-    const { data: created, error: createErr } = await sbService.auth.admin.createUser({
-      email: emailAdresse,
-      password: tempPassword,
-      email_confirm: true,
-    });
-    if (createErr || !created?.user) {
-      const msg = createErr?.message?.includes("already been registered")
-        ? "Un compte existe déjà avec cet e-mail."
-        : (createErr?.message || "Création du compte impossible.");
-      return new Response(JSON.stringify({ error: msg }), { status: 400, headers: CORS });
+    const { data: target } = await sbService.from("staff_users").select("email, nom, prenom, civilite").eq("id", staffId).maybeSingle();
+    if (!target) return new Response(JSON.stringify({ error: "Membre introuvable." }), { status: 404, headers: CORS });
+
+    if (action === "reset") {
+      const tempPassword = genTempPassword();
+      const { error: updErr } = await sbService.auth.admin.updateUserById(staffId, { password: tempPassword });
+      if (updErr) return new Response(JSON.stringify({ error: updErr.message }), { status: 400, headers: CORS });
+
+      await email(
+        target.email,
+        "Votre mot de passe a été réinitialisé — SF Club Paris",
+        `<p>Bonjour ${target.civilite ? target.civilite + " " : ""}${target.prenom || target.nom || ""},</p>
+         <p>Votre mot de passe pour l'espace équipe SF Club Paris vient d'être réinitialisé par l'administrateur.</p>
+         <table role="presentation" style="margin:22px 0;">
+           <tr><td style="background:#0A0A0A;padding:18px 24px;">
+             <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Nouveau mot de passe temporaire</div>
+             <div style="font-size:16px;color:#ffffff;margin-top:8px;"><b>${tempPassword}</b></div>
+           </td></tr>
+         </table>
+         <div style="margin:22px 0;">
+           <a href="${AGENDA_URL}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Accéder à l'espace équipe</a>
+         </div>
+         <p style="font-size:12.5px;color:#999">Si vous n'êtes pas à l'origine de cette demande, contactez immédiatement l'administrateur.</p>`,
+      );
+      return new Response(JSON.stringify({ ok: true }), { headers: CORS });
     }
 
-    const { error: insErr } = await sbService.from("staff_users").insert({
-      id: created.user.id,
-      email: emailAdresse,
-      nom: nom || null,
-      prenom: prenom || null,
-      civilite: civilite || null,
-      telephone: telephone || null,
-    });
-    if (insErr) {
-      // rollback : on ne laisse pas traîner un compte Auth sans accès équipe
-      await sbService.auth.admin.deleteUser(created.user.id);
-      return new Response(JSON.stringify({ error: "Impossible d'ajouter le compte à l'équipe : " + insErr.message }), { status: 500, headers: CORS });
+    if (action === "delete") {
+      const { error: delErr } = await sbService.auth.admin.deleteUser(staffId);
+      if (delErr) return new Response(JSON.stringify({ error: delErr.message }), { status: 400, headers: CORS });
+      // staff_users a on delete cascade sur auth.users, la ligne équipe est supprimée automatiquement.
+      return new Response(JSON.stringify({ ok: true }), { headers: CORS });
     }
 
-    await email(
-      emailAdresse,
-      "Votre accès à l'espace équipe SF Club Paris",
-      `<p>Bonjour ${civilite ? civilite + " " : ""}${prenom || nom || ""},</p>
-       <p>Un compte vient d'être créé pour vous sur l'espace équipe SF Club Paris.</p>
-       <table role="presentation" style="margin:22px 0;">
-         <tr><td style="background:#0A0A0A;padding:18px 24px;">
-           <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Identifiants</div>
-           <div style="font-size:14px;color:#ffffff;margin-top:8px;">Email : <b>${emailAdresse}</b></div>
-           <div style="font-size:14px;color:#ffffff;margin-top:4px;">Mot de passe temporaire : <b>${tempPassword}</b></div>
-         </td></tr>
-       </table>
-       <p>Connectez-vous, puis demandez à l'administrateur de réinitialiser ce mot de passe si vous en avez besoin d'un nouveau.</p>
-       <div style="margin:22px 0;">
-         <a href="${AGENDA_URL}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Accéder à l'espace équipe</a>
-       </div>
-       <p style="font-size:12.5px;color:#999">Cette adresse n'est communiquée qu'à l'équipe SF Club Paris — merci de ne pas la partager.</p>`,
-    );
-
-    return new Response(JSON.stringify({ ok: true }), { headers: CORS });
+    return new Response(JSON.stringify({ error: "Action inconnue." }), { status: 400, headers: CORS });
   } catch (e) {
-    console.log("staff-invite error:", String(e));
+    console.log("staff-manage error:", String(e));
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: CORS });
   }
 });

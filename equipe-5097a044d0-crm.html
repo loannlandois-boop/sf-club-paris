@@ -111,6 +111,7 @@
               <div class="field"><label for="t-titre">Titre</label><input type="text" id="t-titre" required></div>
               <div class="field"><label for="t-priorite">Priorité</label><select id="t-priorite"><option value="normale">Normale</option><option value="urgente">Urgente</option></select></div>
               <div class="field"><label for="t-echeance">Échéance (optionnel)</label><input type="date" id="t-echeance"></div>
+              <div class="field"><label for="t-assigne">Assignée à</label><select id="t-assigne"><option value="">Tout le monde</option></select></div>
             </div>
             <div class="field" style="margin-top:20px"><label for="t-desc">Description</label><textarea id="t-desc"></textarea></div>
             <div style="display:flex;gap:10px;margin-top:8px">
@@ -161,21 +162,25 @@
 
         <!-- ÉQUIPE -->
         <div class="crm-panel" id="panel-equipe">
-          <form class="form-card" id="formEquipe" style="max-width:560px;margin-bottom:2rem">
+          <p class="muted" id="equipeNonAdmin" style="display:none">Seul l'administrateur peut ajouter, réinitialiser ou supprimer des comptes équipe.</p>
+          <form class="form-card" id="formEquipe" style="max-width:640px;margin-bottom:2rem;display:none">
             <h3 style="font-size:1rem;margin-bottom:1.2rem">Ajouter un membre de l'équipe</h3>
             <div class="form-grid">
+              <div class="field"><label for="eq-civilite">Civilité</label><select id="eq-civilite"><option value="">—</option><option value="Monsieur">Monsieur</option><option value="Madame">Madame</option></select></div>
+              <div class="field"><label for="eq-prenom">Prénom</label><input type="text" id="eq-prenom"></div>
               <div class="field"><label for="eq-nom">Nom</label><input type="text" id="eq-nom"></div>
+              <div class="field"><label for="eq-telephone">Téléphone</label><input type="tel" id="eq-telephone"></div>
               <div class="field"><label for="eq-email">Email</label><input type="email" id="eq-email" required></div>
             </div>
-            <p class="muted" style="font-size:.82rem;margin-top:10px">Un mot de passe temporaire sera généré et envoyé par e-mail à cette adresse, avec le lien vers l'espace équipe.</p>
+            <p class="muted" style="font-size:.82rem;margin-top:10px">Un mot de passe temporaire sera généré et envoyé par e-mail à cette adresse, avec le lien vers l'espace équipe. Ces coordonnées permettent de retrouver la personne en cas de mot de passe perdu.</p>
             <button type="submit" class="btn btn--solid btn--lg" style="margin-top:14px">Ajouter et envoyer l'accès</button>
             <p class="muted" id="equipeError" style="color:#d66;font-size:.85rem;display:none;margin-top:1rem"></p>
             <p class="muted" id="equipeOk" style="color:#3a8a5c;font-size:.85rem;display:none;margin-top:1rem">Compte créé, accès envoyé par e-mail.</p>
           </form>
           <div class="table-scroll">
             <table class="datatable" id="equipeTable">
-              <thead><tr><th>Nom</th><th>Email</th><th>Membre depuis</th></tr></thead>
-              <tbody id="equipeBody"><tr><td colspan="3" class="muted">Chargement…</td></tr></tbody>
+              <thead><tr><th>Membre</th><th>Email</th><th>Téléphone</th><th>Rôle</th><th>Membre depuis</th><th id="equipeActionsHead" style="display:none">Actions</th></tr></thead>
+              <tbody id="equipeBody"><tr><td colspan="6" class="muted">Chargement…</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -208,11 +213,26 @@
       document.getElementById('crmDash').style.display = 'none';
       document.getElementById('btnLogout').style.display = 'none';
     }
+    var monId = null;
+    var estAdmin = false;
+
     function showDash() {
       document.getElementById('crmLogin').style.display = 'none';
       document.getElementById('crmDash').style.display = 'block';
       document.getElementById('btnLogout').style.display = '';
-      chargerTout();
+      chargerIdentite().then(chargerTout);
+    }
+
+    function chargerIdentite() {
+      return authFetch('/auth/v1/user').then(function (r) { return r.json(); }).then(function (u) {
+        monId = u && u.id ? u.id : null;
+        return authFetch('/rest/v1/rpc/is_admin', { method: 'POST', body: JSON.stringify({}) });
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        estAdmin = d === true;
+        document.getElementById('formEquipe').style.display = estAdmin ? '' : 'none';
+        document.getElementById('equipeNonAdmin').style.display = estAdmin ? 'none' : '';
+        document.getElementById('equipeActionsHead').style.display = estAdmin ? '' : 'none';
+      }).catch(function () { monId = null; estAdmin = false; });
     }
 
     var formLogin = document.getElementById('formCrmLogin');
@@ -403,6 +423,7 @@
           '<div><b>' + t.titre + '</b>' +
           (t.description ? '<span class="muted" style="display:block;font-size:.82rem;margin-top:3px;max-width:520px">' + t.description + '</span>' : '') +
           (t.echeance ? '<span class="muted" style="display:block;font-size:.78rem;margin-top:3px">Échéance : ' + t.echeance + '</span>' : '') +
+          '<span class="muted" style="display:block;font-size:.78rem;margin-top:3px">Assignée à : ' + (t.assigne_a ? (staffCache[t.assigne_a] || 'un membre de l\'équipe') : 'Tout le monde') + '</span>' +
           '</div>' +
           '<div style="display:flex;align-items:center;gap:10px">' +
           (t.origine === 'auto' ? '<span class="tache-tag tache-tag--auto">Auto</span>' : '') +
@@ -429,6 +450,7 @@
       document.getElementById('t-titre').value = t.titre || '';
       document.getElementById('t-priorite').value = t.priorite || 'normale';
       document.getElementById('t-echeance').value = t.echeance || '';
+      document.getElementById('t-assigne').value = t.assigne_a || '';
       document.getElementById('t-desc').value = t.description || '';
       document.getElementById('tacheFormTitre').textContent = 'Modifier la tâche';
       document.getElementById('tacheSubmitBtn').textContent = 'Enregistrer les modifications';
@@ -450,10 +472,11 @@
       var titre = document.getElementById('t-titre').value.trim();
       var priorite = document.getElementById('t-priorite').value;
       var echeance = document.getElementById('t-echeance').value || null;
+      var assigneA = document.getElementById('t-assigne').value || null;
       var desc = document.getElementById('t-desc').value.trim();
       var err = document.getElementById('tacheError');
       err.style.display = 'none';
-      var body = { titre: titre, priorite: priorite, echeance: echeance, description: desc };
+      var body = { titre: titre, priorite: priorite, echeance: echeance, assigne_a: assigneA, description: desc };
       var req = id
         ? authFetch('/rest/v1/taches?id=eq.' + id, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(body) })
         : authFetch('/rest/v1/taches', { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(Object.assign({ origine: 'manuelle' }, body)) });
@@ -473,23 +496,81 @@
       chargerPaiements();
       chargerVisites();
       chargerClients();
-      chargerTaches();
+      chargerStaffListe().then(function () { chargerTaches(); });
       chargerEquipe();
+    }
+
+    // ---- Liste équipe (pour l'assignation des tâches) ----
+    var staffCache = {};
+    function chargerStaffListe() {
+      return authFetch('/rest/v1/staff_users?select=id,civilite,prenom,nom,email&order=nom.asc')
+        .then(function (r) { return r.json(); }).then(function (rows) {
+          rows = rows || [];
+          staffCache = {};
+          var sel = document.getElementById('t-assigne');
+          var current = sel.value;
+          sel.innerHTML = '<option value="">Tout le monde</option>';
+          rows.forEach(function (m) {
+            var nomAffiche = ((m.prenom || '') + ' ' + (m.nom || '')).trim() || m.email || 'Membre';
+            staffCache[m.id] = nomAffiche;
+            var opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = nomAffiche;
+            sel.appendChild(opt);
+          });
+          sel.value = current;
+        }).catch(function () {});
     }
 
     // ---- Équipe ----
     function chargerEquipe() {
-      authFetch('/rest/v1/staff_users?select=email,nom,created_at&order=created_at.asc')
+      authFetch('/rest/v1/staff_users?select=id,civilite,prenom,nom,email,telephone,is_admin,created_at&order=created_at.asc')
         .then(function (r) { return r.json(); }).then(function (rows) {
           rows = rows || [];
           var body = document.getElementById('equipeBody');
-          if (!rows.length) { body.innerHTML = '<tr><td colspan="3" class="muted">Aucun membre.</td></tr>'; return; }
+          if (!rows.length) { body.innerHTML = '<tr><td colspan="6" class="muted">Aucun membre.</td></tr>'; return; }
           body.innerHTML = '';
           rows.forEach(function (m) {
             var tr = document.createElement('tr');
             var d = m.created_at ? new Date(m.created_at).toLocaleDateString('fr-FR') : '—';
-            tr.innerHTML = '<td>' + (m.nom || '—') + '</td><td>' + (m.email || '—') + '</td><td>' + d + '</td>';
+            var nomAffiche = ((m.civilite || '') + ' ' + (m.prenom || '') + ' ' + (m.nom || '')).trim() || '—';
+            var actions = '—';
+            if (estAdmin && m.id !== monId) {
+              actions = '<div style="display:flex;gap:8px"><button type="button" class="agenda-link" data-reset="' + m.id + '">Réinitialiser mdp</button>' +
+                '<button type="button" class="agenda-link" style="color:#d66" data-delete="' + m.id + '">Supprimer</button></div>';
+            } else if (m.id === monId) {
+              actions = '<span class="muted">Vous</span>';
+            }
+            tr.innerHTML = '<td>' + nomAffiche + (m.is_admin ? ' <span style="margin-left:6px;padding:.2em .6em;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;border:1px solid var(--gold);color:var(--gold)">Admin</span>' : '') + '</td>' +
+              '<td>' + (m.email || '—') + '</td><td>' + (m.telephone || '—') + '</td>' +
+              '<td>' + (m.is_admin ? 'Administrateur' : 'Équipe') + '</td><td>' + d + '</td>' +
+              '<td' + (estAdmin ? '' : ' style="display:none"') + '>' + actions + '</td>';
             body.appendChild(tr);
+          });
+          body.querySelectorAll('[data-reset]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              if (!confirm('Réinitialiser le mot de passe de ce membre ? Un nouveau mot de passe temporaire lui sera envoyé par e-mail.')) return;
+              btn.disabled = true;
+              authFetch('/functions/v1/staff-manage', { method: 'POST', body: JSON.stringify({ action: 'reset', staff_id: btn.dataset.reset }) })
+                .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+                .then(function (res) {
+                  btn.disabled = false;
+                  if (!res.ok) { alert(res.d.error || 'Erreur.'); return; }
+                  alert('Mot de passe réinitialisé et envoyé par e-mail.');
+                }).catch(function () { btn.disabled = false; alert('Erreur de connexion.'); });
+            });
+          });
+          body.querySelectorAll('[data-delete]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              if (!confirm('Supprimer définitivement ce compte équipe ? Cette action est irréversible.')) return;
+              btn.disabled = true;
+              authFetch('/functions/v1/staff-manage', { method: 'POST', body: JSON.stringify({ action: 'delete', staff_id: btn.dataset.delete }) })
+                .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+                .then(function (res) {
+                  if (!res.ok) { btn.disabled = false; alert(res.d.error || 'Erreur.'); return; }
+                  chargerEquipe();
+                }).catch(function () { btn.disabled = false; alert('Erreur de connexion.'); });
+            });
           });
         }).catch(function () {});
     }
@@ -499,19 +580,23 @@
       e.preventDefault();
       var email = document.getElementById('eq-email').value.trim();
       var nom = document.getElementById('eq-nom').value.trim();
+      var prenom = document.getElementById('eq-prenom').value.trim();
+      var civilite = document.getElementById('eq-civilite').value;
+      var telephone = document.getElementById('eq-telephone').value.trim();
       var err = document.getElementById('equipeError');
       var ok = document.getElementById('equipeOk');
       err.style.display = 'none';
       ok.style.display = 'none';
       var s = getSession();
       if (!s) return;
-      authFetch('/functions/v1/staff-invite', { method: 'POST', body: JSON.stringify({ email: email, nom: nom }) })
+      authFetch('/functions/v1/staff-invite', { method: 'POST', body: JSON.stringify({ email: email, nom: nom, prenom: prenom, civilite: civilite, telephone: telephone }) })
         .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
         .then(function (res) {
           if (!res.ok) { err.textContent = res.d.error || 'Erreur.'; err.style.display = ''; return; }
           ok.style.display = '';
           formEquipe.reset();
           chargerEquipe();
+          chargerStaffListe();
         }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
     });
 

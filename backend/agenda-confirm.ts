@@ -5,7 +5,9 @@
 // paiement de la location (capture immédiate, facture générée par Stripe) et
 // préautorisation de la caution (capture manuelle, jamais débitée sauf
 // dommages) — et envoie l'e-mail de confirmation au client avec les
-// documents demandés.
+// documents demandés. Applique automatiquement la remise de fidélité
+// (Argent -5%, Or -10%) sur le montant de la location UNIQUEMENT — jamais
+// sur la caution — si l'e-mail du client correspond à un compte SF Club.
 //
 // Sécurité : la mise à jour du statut passe par le token de l'appelant
 // (Authorization reçu), donc les policies RLS "to authenticated" du projet
@@ -171,7 +173,26 @@ Deno.serve(async (req) => {
     const clientEmail = (r.client_contact || "").includes("@") ? r.client_contact : undefined;
     const reference = r.reference || `SF-${new Date().getFullYear()}-${String(id).padStart(5, "0")}`;
 
-    const montantLocation = r.prix_total || 0;
+    // Remise de fidélité automatique, appliquée uniquement sur le montant de la
+    // location (jamais sur la caution) — selon le palier de points du client SF Club.
+    let montantLocation = r.prix_total || 0;
+    let remisePct = 0;
+    let palierNom = "";
+    if (clientEmail) {
+      const { data: cli } = await sbService.from("clients").select("points").eq("email", clientEmail).maybeSingle();
+      if (cli) {
+        const pts = cli.points || 0;
+        if (pts >= 1000) { remisePct = 10; palierNom = "Or"; }
+        else if (pts >= 300) { remisePct = 5; palierNom = "Argent"; }
+      }
+    }
+    if (remisePct > 0 && montantLocation > 0) {
+      const montantAvantRemise = montantLocation;
+      montantLocation = Math.round(montantLocation * (1 - remisePct / 100));
+      await sbService.from("agenda_reservations").update({ prix_total: montantLocation }).eq("id", id);
+      console.log(`agenda-confirm: remise fidelite ${remisePct}% (palier ${palierNom}) appliquee, reservation ${id} : ${montantAvantRemise}€ -> ${montantLocation}€`);
+    }
+
     const montantCaution = v.caution || 0;
     const libelleComplet = `${libelle} — ${r.date_debut} au ${r.date_fin}`;
 
@@ -188,7 +209,7 @@ Deno.serve(async (req) => {
     ];
     if (r.adresse_livraison) rowsRecap.push(["Livraison", r.adresse_livraison]);
     if (r.numero_vol) rowsRecap.push(["Vol", `${r.numero_vol}${r.heure_arrivee_vol ? " — arrivée " + r.heure_arrivee_vol : ""}${r.heure_depart_vol ? ", départ " + r.heure_depart_vol : ""}`]);
-    if (montantLocation) rowsRecap.push(["Montant location", `${montantLocation} €`]);
+    if (montantLocation) rowsRecap.push(["Montant location", `${montantLocation} €` + (remisePct > 0 ? ` (remise fidélité palier ${palierNom} : -${remisePct}% incluse)` : "")]);
     if (montantCaution) rowsRecap.push(["Caution", `${montantCaution} € (préautorisée, non débitée)`]);
 
     const html = `

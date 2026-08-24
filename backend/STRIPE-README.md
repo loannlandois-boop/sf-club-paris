@@ -93,6 +93,10 @@ C'est tout : chaque jour à 10h (heure UTC), la tâche planifiée vérifie les l
 terminent et envoie le remerciement.
 
 ## Notes
+- **Remise de fidélité automatique** : si l'e-mail du client correspond à un compte SF Club,
+  la remise de son palier (Argent -5%, Or -10%) est appliquée automatiquement sur le montant
+  de la location — jamais sur la caution. Le `prix_total` de la réservation est mis à jour en
+  conséquence, et la remise appliquée est mentionnée dans l'e-mail de confirmation.
 - **2 liens distincts** : location (capture automatique, facture générée par Stripe) et
   caution (capture manuelle, jamais débitée sauf dommages). Les combiner dans un seul lien
   a été essayé puis abandonné : Stripe refuse la génération de facture automatique dès qu'une

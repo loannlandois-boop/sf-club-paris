@@ -18,6 +18,15 @@
     .tier-progress { max-width:420px; margin:22px auto 0; height:3px; background:rgba(255,255,255,.15); position:relative; }
     .tier-progress__bar { height:100%; background:var(--gold); }
     .tier-hint { font-size:.78rem; color:#999; margin-top:10px; }
+    .palier-card { border:1px solid var(--border); padding:1.6rem; position:relative; opacity:.65; }
+    .palier-card.is-active { opacity:1; border-color:var(--gold); }
+    .palier-card.is-locked::after { content:'À débloquer'; position:absolute; top:1.2rem; right:1.2rem; font-size:.65rem; letter-spacing:.1em; text-transform:uppercase; color:#999; }
+    .palier-card h3 { display:flex; align-items:center; gap:.6em; }
+    .palier-card .pts { font-size:.78rem; color:var(--text-muted); margin-bottom:1rem; }
+    .palier-card ul { list-style:none; padding:0; margin:0; }
+    .palier-card ul li { font-size:.86rem; color:var(--text-muted); padding:.4em 0; border-top:1px solid var(--border); }
+    .palier-card ul li:first-child { border-top:0; }
+    .palier-card.is-active ul li { color:var(--text); }
     .resa-row { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:14px; padding:1rem 1.2rem; border:1px solid var(--border); border-top:none; font-size:.9rem; }
     .resa-row:first-of-type { border-top:1px solid var(--border); }
     .resa-row b { color:#fff; }
@@ -75,6 +84,18 @@
         <p class="tier-hint" id="tierHint"></p>
       </div>
 
+      <div class="section" style="padding-top:0">
+        <div class="container">
+          <div class="section-head">
+            <span class="eyebrow">Programme de fidélité</span>
+            <h2>Vos avantages par palier</h2>
+          </div>
+          <div class="grid grid--3" id="palierGrid"></div>
+        </div>
+      </div>
+
+      <hr class="gold-line">
+
       <div class="section">
         <div class="container">
           <div class="section-head">
@@ -104,10 +125,39 @@
 
     // Paliers de fidélité : ajustables librement.
     var PALIERS = [
-      { nom: 'Bronze', min: 0 },
-      { nom: 'Argent', min: 300 },
-      { nom: 'Or', min: 1000 }
+      { nom: 'Bronze', min: 0, avantages: [
+        'Accès complet à la location, aux événements et à l\'agenda du Club',
+        '1 point tous les 10 € dépensés'
+      ] },
+      { nom: 'Argent', min: 300, avantages: [
+        'Tous les avantages Bronze',
+        'Priorité de réservation sur les événements à places limitées',
+        '-5% sur les événements du Club'
+      ] },
+      { nom: 'Or', min: 1000, avantages: [
+        'Tous les avantages Argent',
+        '-10% sur vos locations',
+        'Surclassement gratuit selon disponibilité',
+        'Accès prioritaire aux événements exclusifs (GP Monaco, Track Days…)'
+      ] }
     ];
+
+    function renderPaliers(points) {
+      var grid = document.getElementById('palierGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      PALIERS.forEach(function (p, i) {
+        var actif = points >= p.min && (i === PALIERS.length - 1 || points < PALIERS[i + 1].min);
+        var verrouille = points < p.min;
+        var card = document.createElement('article');
+        card.className = 'palier-card reveal' + (actif ? ' is-active' : '') + (verrouille ? ' is-locked' : '');
+        card.innerHTML =
+          '<h3>' + p.nom + (actif ? ' <span class="badge">Votre palier</span>' : '') + '</h3>' +
+          '<div class="pts">' + (p.min === 0 ? 'Dès l\'inscription' : 'À partir de ' + p.min + ' points') + '</div>' +
+          '<ul>' + p.avantages.map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ul>';
+        grid.appendChild(card);
+      });
+    }
 
     function getSession() {
       try { return JSON.parse(sessionStorage.getItem('sf_client_session') || 'null'); } catch (e) { return null; }
@@ -165,11 +215,13 @@
       if (p.suivant) {
         var pct = Math.min(100, Math.round(((c.points - p.courant.min) / (p.suivant.min - p.courant.min)) * 100));
         document.getElementById('tierBar').style.width = pct + '%';
-        document.getElementById('tierHint').textContent = (p.suivant.min - c.points) + ' points avant le palier ' + p.suivant.nom;
+        var teaser = p.suivant.avantages[1] || p.suivant.avantages[0];
+        document.getElementById('tierHint').textContent = (p.suivant.min - c.points) + ' points avant le palier ' + p.suivant.nom + ' (' + teaser + ')';
       } else {
         document.getElementById('tierBar').style.width = '100%';
         document.getElementById('tierHint').textContent = 'Palier maximum atteint';
       }
+      renderPaliers(c.points || 0);
     }
 
     function loadProfil() {

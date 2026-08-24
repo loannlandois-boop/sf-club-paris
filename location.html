@@ -272,6 +272,13 @@
       var loginHint = document.getElementById('loginHint');
       var formInline = document.getElementById('formInlineLogin');
 
+      var PALIERS = [{ nom: 'Bronze', min: 0 }, { nom: 'Argent', min: 300 }, { nom: 'Or', min: 1000 }];
+      function palierDe(points) {
+        var courant = PALIERS[0];
+        for (var i = 0; i < PALIERS.length; i++) if (points >= PALIERS[i].min) courant = PALIERS[i];
+        return courant;
+      }
+
       function civiliteLongue(c) { return c === 'Mme' ? 'Madame' : (c === 'M.' ? 'Monsieur' : (c || '')); }
 
       function setClientSession(s) { try { sessionStorage.setItem('sf_client_session', JSON.stringify(s)); } catch (e) {} }
@@ -286,7 +293,15 @@
         if (civiliteEl && c.civilite) civiliteEl.value = c.civilite;
         if (nomEl) nomEl.value = ((c.prenom || '') + ' ' + (c.nom || '')).trim();
         if (contactEl && c.email) contactEl.value = c.email;
-        loginHint.innerHTML = 'Bienvenue <b>' + civiliteLongue(c.civilite) + ' ' + (c.nom || '') + '</b> · ' + (c.points || 0) + ' points · <a href="mon-compte.html" class="gold">Mon compte</a>';
+        var palier = palierDe(c.points || 0);
+        loginHint.innerHTML = 'Bienvenue <b>' + civiliteLongue(c.civilite) + ' ' + (c.nom || '') + '</b> · ' +
+          (c.points || 0) + ' points (palier ' + palier.nom + ') · <a href="mon-compte.html" class="gold">Mon compte</a> · ' +
+          '<button type="button" id="btnLogoutInline" style="background:none;border:none;color:var(--text-muted);text-decoration:underline;cursor:pointer;font:inherit;padding:0">Déconnexion</button>';
+        var btnLogout = document.getElementById('btnLogoutInline');
+        if (btnLogout) btnLogout.addEventListener('click', function () {
+          try { sessionStorage.removeItem('sf_client_session'); } catch (e) {}
+          window.location.reload();
+        });
       }
 
       function chargerProfil(token) {

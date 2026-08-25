@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
       prenom: prenom || null,
       civilite: civilite || null,
       telephone: telephone || null,
+      doit_changer_mdp: true,
     });
     if (insErr) {
       // rollback : on ne laisse pas traîner un compte Auth sans accès équipe
@@ -129,10 +130,10 @@ Deno.serve(async (req) => {
          <tr><td style="background:#0A0A0A;padding:18px 24px;">
            <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Identifiants</div>
            <div style="font-size:14px;color:#ffffff;margin-top:8px;">Email : <b>${emailAdresse}</b></div>
-           <div style="font-size:14px;color:#ffffff;margin-top:4px;">Mot de passe temporaire : <b>${tempPassword}</b></div>
+           <div style="font-size:14px;color:#ffffff;margin-top:4px;">Mot de passe provisoire : <b>${tempPassword}</b></div>
          </td></tr>
        </table>
-       <p>Connectez-vous, puis demandez à l'administrateur de réinitialiser ce mot de passe si vous en avez besoin d'un nouveau.</p>
+       <p>Connectez-vous avec ce mot de passe provisoire — il vous sera demandé d'en choisir un nouveau dès votre première connexion.</p>
        <div style="margin:22px 0;">
          <a href="${AGENDA_URL}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Accéder à l'espace équipe</a>
        </div>

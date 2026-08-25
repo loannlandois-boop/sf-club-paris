@@ -96,6 +96,7 @@ Deno.serve(async (req) => {
       const tempPassword = genTempPassword();
       const { error: updErr } = await sbService.auth.admin.updateUserById(staffId, { password: tempPassword });
       if (updErr) return new Response(JSON.stringify({ error: updErr.message }), { status: 400, headers: CORS });
+      await sbService.from("staff_users").update({ doit_changer_mdp: true }).eq("id", staffId);
 
       await email(
         target.email,
@@ -104,10 +105,11 @@ Deno.serve(async (req) => {
          <p>Votre mot de passe pour l'espace équipe SF Club Paris vient d'être réinitialisé par l'administrateur.</p>
          <table role="presentation" style="margin:22px 0;">
            <tr><td style="background:#0A0A0A;padding:18px 24px;">
-             <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Nouveau mot de passe temporaire</div>
+             <div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#999999;">Nouveau mot de passe provisoire</div>
              <div style="font-size:16px;color:#ffffff;margin-top:8px;"><b>${tempPassword}</b></div>
            </td></tr>
          </table>
+         <p style="font-size:13.5px;color:#666;">Il vous sera demandé d'en choisir un nouveau dès votre prochaine connexion.</p>
          <div style="margin:22px 0;">
            <a href="${AGENDA_URL}" style="display:inline-block;background:#0A0A0A;color:#ffffff;text-decoration:none;font-size:13.5px;font-weight:700;letter-spacing:.5px;padding:13px 24px;">Accéder à l'espace équipe</a>
          </div>

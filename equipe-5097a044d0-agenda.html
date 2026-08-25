@@ -67,6 +67,23 @@
       </div>
     </section>
 
+    <!-- ===== CHOIX DU MOT DE PASSE (première connexion / après réinitialisation) ===== -->
+    <section class="club-login" id="forcePwd" style="display:none">
+      <div class="container" style="max-width:440px">
+        <div class="center" style="margin-bottom:30px">
+          <span class="eyebrow reveal">Dernière étape</span>
+          <h1 class="reveal" data-delay="1" style="font-size:clamp(2.4rem,7vw,3.2rem)">Choisissez votre mot de passe</h1>
+          <p class="muted reveal" data-delay="2">Vous vous êtes connecté avec un mot de passe provisoire — choisissez-en un nouveau, personnel.</p>
+        </div>
+        <form class="form-card" id="formForcePwd">
+          <div class="field"><label for="fp-pass">Nouveau mot de passe</label><input type="password" id="fp-pass" autocomplete="new-password" minlength="6" required></div>
+          <div class="field"><label for="fp-pass2">Confirmer le mot de passe</label><input type="password" id="fp-pass2" autocomplete="new-password" minlength="6" required></div>
+          <p class="muted" id="fpError" style="color:#d66;font-size:.85rem;display:none"></p>
+          <button type="submit" class="btn btn--solid btn--lg btn--block">Valider mon mot de passe</button>
+        </form>
+      </div>
+    </section>
+
     <!-- ===== DASHBOARD ===== -->
     <section class="section" id="agendaDash">
       <div class="container">
@@ -151,17 +168,54 @@
 
     function showLogin() {
       document.getElementById('agendaLogin').style.display = '';
+      document.getElementById('forcePwd').style.display = 'none';
       document.getElementById('agendaDash').style.display = 'none';
       document.getElementById('btnLogout').style.display = 'none';
     }
+    function showForcePwd() {
+      document.getElementById('agendaLogin').style.display = 'none';
+      document.getElementById('forcePwd').style.display = '';
+      document.getElementById('agendaDash').style.display = 'none';
+      document.getElementById('btnLogout').style.display = '';
+    }
     function showDash() {
       document.getElementById('agendaLogin').style.display = 'none';
+      document.getElementById('forcePwd').style.display = 'none';
       document.getElementById('agendaDash').style.display = 'block';
       document.getElementById('btnLogout').style.display = '';
       loadVehicules();
       loadPending();
       loadReservations();
     }
+
+    // Après connexion : vérifie si un changement de mot de passe est requis
+    // (première connexion après invitation, ou après une réinitialisation).
+    function entrerApresConnexion() {
+      authFetch('/auth/v1/user').then(function (r) { return r.json(); }).then(function (u) {
+        if (!u || !u.id) { showDash(); return; }
+        return authFetch('/rest/v1/staff_users?select=doit_changer_mdp&id=eq.' + u.id)
+          .then(function (r) { return r.json(); })
+          .then(function (rows) {
+            if (rows && rows[0] && rows[0].doit_changer_mdp) showForcePwd(); else showDash();
+          });
+      }).catch(function () { showDash(); });
+    }
+
+    document.getElementById('formForcePwd').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var p1 = document.getElementById('fp-pass').value;
+      var p2 = document.getElementById('fp-pass2').value;
+      var err = document.getElementById('fpError');
+      err.style.display = 'none';
+      if (p1.length < 6) { err.textContent = 'Le mot de passe doit faire au moins 6 caractères.'; err.style.display = ''; return; }
+      if (p1 !== p2) { err.textContent = 'Les deux mots de passe ne correspondent pas.'; err.style.display = ''; return; }
+      authFetch('/auth/v1/user', { method: 'PUT', body: JSON.stringify({ password: p1 }) })
+        .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) { err.textContent = (res.d && (res.d.msg || res.d.error_description)) || 'Erreur.'; err.style.display = ''; return; }
+          return authFetch('/rest/v1/rpc/marquer_mdp_change', { method: 'POST', body: JSON.stringify({}) }).then(function () { showDash(); });
+        }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
+    });
 
     // ---- Connexion (Supabase Auth) ----
     var formLogin = document.getElementById('formAgendaLogin');
@@ -179,7 +233,7 @@
         .then(function (res) {
           if (!res.ok) { err.textContent = 'Identifiants incorrects.'; err.style.display = ''; return; }
           setSession({ token: res.d.access_token, refresh: res.d.refresh_token, exp: Date.now() + (res.d.expires_in || 3600) * 1000 });
-          showDash();
+          entrerApresConnexion();
         }).catch(function () { err.textContent = 'Erreur de connexion.'; err.style.display = ''; });
     });
 
@@ -411,7 +465,7 @@
 
     // ---- Démarrage ----
     var s = getSession();
-    if (s && Date.now() < s.exp + 30 * 24 * 3600 * 1000) showDash(); else showLogin();
+    if (s && Date.now() < s.exp + 30 * 24 * 3600 * 1000) entrerApresConnexion(); else showLogin();
   })();
   </script>
 </body>

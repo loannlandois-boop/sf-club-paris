@@ -116,9 +116,19 @@ alter table public.staff_users add column if not exists prenom text;
 alter table public.staff_users add column if not exists civilite text;
 alter table public.staff_users add column if not exists telephone text;
 alter table public.staff_users add column if not exists is_admin boolean not null default false;
+alter table public.staff_users add column if not exists doit_changer_mdp boolean not null default false;
 alter table public.staff_users add column if not exists created_at timestamptz not null default now();
 drop policy if exists "staff lecture equipe" on public.staff_users;
 create policy "staff lecture equipe" on public.staff_users for select to authenticated using (is_staff());
+
+create or replace function public.marquer_mdp_change()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.staff_users set doit_changer_mdp = false where id = auth.uid();
+$$;
 
 create or replace function public.is_staff()
 returns boolean
